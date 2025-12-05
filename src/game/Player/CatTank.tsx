@@ -4,6 +4,8 @@ import { Vector3, Group, Euler, Raycaster, Plane, Mesh } from 'three';
 import { useGameStore } from '../store';
 import { Edges } from '@react-three/drei';
 import { generateCatFaceTexture, generateTracksTexture, generateChassisTexture } from '../Utils/TextureGenerator';
+import { Crosshair } from '../UI/Crosshair';
+import { checkCircleCollision, checkCircleAABBCollision } from '../Utils/CollisionUtils';
 
 const MOVEMENT_SPEED = 8;
 const ROTATION_SPEED = 2.5;
@@ -19,6 +21,7 @@ export const CatTank = () => {
     const heal = useGameStore((state) => state.heal);
     const gameOver = useGameStore((state) => state.gameOver);
     const enemies = useGameStore((state) => state.enemies);
+    const targets = useGameStore((state) => state.targets); // Blocks
     const recoilRef = useRef(0);
 
     // Input State
@@ -96,8 +99,33 @@ export const CatTank = () => {
         if (moveDir.length() > 0) {
             moveDir.normalize();
 
-            // Move
-            bodyRef.current.position.add(moveDir.multiplyScalar(MOVEMENT_SPEED * delta));
+            // Predictive Movement
+            const nextPos = bodyRef.current.position.clone().add(moveDir.clone().multiplyScalar(MOVEMENT_SPEED * delta));
+            let canMove = true;
+
+            // 1. Check Enemy Collisions
+            for (const enemy of enemies) {
+                if (checkCircleCollision(nextPos, 1.5, enemy.position, 1.5)) {
+                    canMove = false;
+                    break;
+                }
+            }
+
+            // 2. Check Block Collisions (Targets)
+            if (canMove) {
+                for (const target of targets) {
+                    // Assuming blocks are roughly 2x2x2 based on TargetManager
+                    // TargetManager spawns BoxGeometry args={[2, 2, 2]}
+                    if (checkCircleAABBCollision(nextPos, 1.2, target.position, new Vector3(2, 2, 2))) {
+                        canMove = false;
+                        break;
+                    }
+                }
+            }
+
+            if (canMove) {
+                bodyRef.current.position.copy(nextPos);
+            }
 
             // Rotate Body to face movement direction (smoothly)
             const targetRotation = Math.atan2(moveDir.x, moveDir.z);
@@ -112,15 +140,9 @@ export const CatTank = () => {
             bodyRef.current.rotation.y += diff * ROTATION_SPEED * delta;
         }
 
-        // Collision Check (Simple Sphere)
+        // Collision Check (Simple Sphere) - REMOVED (Replaced by predictive above)
         // If we hit an enemy, push back.
-        for (const enemy of enemies) {
-            const dist = bodyRef.current.position.distanceTo(enemy.position);
-            if (dist < 2.5) { // 1.5 (player radius) + 1.5 (enemy radius) approx
-                const pushDir = bodyRef.current.position.clone().sub(enemy.position).normalize();
-                bodyRef.current.position.add(pushDir.multiplyScalar(0.1)); // Push out
-            }
-        }
+        // for (const enemy of enemies) { ... }
 
         // Health Regen
         // If health < 100 and no damage for 5s, heal.
