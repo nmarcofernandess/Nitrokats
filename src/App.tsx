@@ -1,10 +1,12 @@
 import { Scene } from './game/Scene';
+import { UI } from './game/UI';
 
 function App() {
   return (
-    <div className="w-full h-screen bg-black">
+    <>
       <Scene />
-    </div>
+      <UI />
+    </>
   );
 }
 

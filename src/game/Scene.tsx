@@ -6,6 +6,7 @@ import { CatTank } from './Player/CatTank';
 import { LaserManager } from './Projectiles/LaserManager';
 import { TargetManager } from './World/TargetManager';
 import { VFXManager } from './World/VFXManager';
+import { EnemyManager } from './Entities/EnemyTank';
 
 export const Scene = () => {
     return (
@@ -22,6 +23,9 @@ export const Scene = () => {
             <LaserManager />
             <TargetManager />
             <VFXManager />
+
+            {/* Enemies */}
+            <EnemyManager />
 
             {/* Post Processing */}
             <EffectComposer>

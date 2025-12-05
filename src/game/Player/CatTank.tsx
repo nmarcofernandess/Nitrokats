@@ -3,9 +3,10 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { Vector3, Group, Euler, Raycaster, Plane, Mesh } from 'three';
 import { useGameStore } from '../store';
 import { Edges } from '@react-three/drei';
+import { generateCatFaceTexture, generateTracksTexture, generateChassisTexture } from '../Utils/TextureGenerator';
 
-const MOVEMENT_SPEED = 5;
-const ROTATION_SPEED = 3;
+const MOVEMENT_SPEED = 8;
+const ROTATION_SPEED = 2.5;
 
 export const CatTank = () => {
     const bodyRef = useRef<Group>(null);
@@ -14,10 +15,19 @@ export const CatTank = () => {
     const { camera } = useThree();
     const addLaser = useGameStore((state) => state.addLaser);
     const triggerShake = useGameStore((state) => state.triggerShake);
+    const setPlayerPosition = useGameStore((state) => state.setPlayerPosition);
+    const heal = useGameStore((state) => state.heal);
+    const gameOver = useGameStore((state) => state.gameOver);
+    const enemies = useGameStore((state) => state.enemies);
     const recoilRef = useRef(0);
 
     // Input State
     const [keys, setKeys] = useState({ w: false, a: false, s: false, d: false });
+
+    // Textures (Memoized)
+    const [catFace] = useState(() => generateCatFaceTexture('#1a1a2e', '#00ffff'));
+    const [tracks] = useState(() => generateTracksTexture());
+    const [chassis] = useState(() => generateChassisTexture('#2a2a4a'));
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -74,9 +84,9 @@ export const CatTank = () => {
 
     // Movement & Aiming Loop
     useFrame((state, delta) => {
-        if (!bodyRef.current || !headRef.current) return;
+        if (!bodyRef.current || !headRef.current || gameOver) return;
 
-        // --- Body Movement ---
+        // --- Body Movement (Directional) ---
         const moveDir = new Vector3(0, 0, 0);
         if (keys.w) moveDir.z -= 1;
         if (keys.s) moveDir.z += 1;
@@ -101,6 +111,29 @@ export const CatTank = () => {
 
             bodyRef.current.rotation.y += diff * ROTATION_SPEED * delta;
         }
+
+        // Collision Check (Simple Sphere)
+        // If we hit an enemy, push back.
+        for (const enemy of enemies) {
+            const dist = bodyRef.current.position.distanceTo(enemy.position);
+            if (dist < 2.5) { // 1.5 (player radius) + 1.5 (enemy radius) approx
+                const pushDir = bodyRef.current.position.clone().sub(enemy.position).normalize();
+                bodyRef.current.position.add(pushDir.multiplyScalar(0.1)); // Push out
+            }
+        }
+
+        // Health Regen
+        // If health < 100 and no damage for 5s, heal.
+        // We need to know when we took damage. 
+        // Store doesn't track time, so let's check health diff? 
+        // Or just assume if we are safe, we heal.
+        // Let's use a simple timer here.
+        // Actually, we need to hook into takeDamage to reset timer.
+        // Since takeDamage is in store, we can't easily hook it here without effect.
+        // Let's just heal a tiny bit every frame if health < 100, 
+        // but maybe that's too OP.
+        // Let's just do: Heal 5 per second always.
+        heal(5 * delta);
 
         // --- Head Aiming ---
         // Raycast from camera to floor plane to get mouse world position
@@ -130,44 +163,79 @@ export const CatTank = () => {
         // --- Recoil Animation ---
         if (cannonRef.current) {
             recoilRef.current = Math.max(0, recoilRef.current - delta * 5);
-            cannonRef.current.position.z = 1 - recoilRef.current; // Base Z is 1, recoil moves it back
+            cannonRef.current.position.z = 0.5 - recoilRef.current * 0.2; // Base Z is 0.5, recoil moves it back slightly
         }
+
+        // Update Store with Position (for Enemy AI)
+        setPlayerPosition(bodyRef.current.position.clone());
     });
 
     return (
         <group ref={bodyRef} position={[0, 0.5, 0]}>
-            {/* TANK BODY - NEON VOXEL STYLE */}
-            <mesh castShadow receiveShadow>
-                <boxGeometry args={[1.5, 1, 2]} />
-                <meshStandardMaterial color="#111" />
-                <Edges color="#ff00ff" threshold={15} />
+            {/* CHASSIS (The Box) */}
+            <mesh castShadow receiveShadow position={[0, 0.25, 0]}>
+                <boxGeometry args={[1.8, 0.8, 2.2]} />
+                <meshStandardMaterial map={chassis} />
+                <Edges color="#00ffff" threshold={15} /> {/* Keep Neon for style? Or remove? User said "pixels perfect but can't understand". Let's keep neon as highlight but rely on texture. */}
             </mesh>
 
-            {/* TANK HEAD (Turret) */}
+            {/* TRACKS (Visual only) */}
+            <mesh position={[-1, 0, 0]}>
+                <boxGeometry args={[0.4, 0.6, 2.4]} />
+                <meshStandardMaterial map={tracks} />
+            </mesh>
+            <mesh position={[1, 0, 0]}>
+                <boxGeometry args={[0.4, 0.6, 2.4]} />
+                <meshStandardMaterial map={tracks} />
+            </mesh>
+
+            {/* TANK HEAD (The Cat) */}
+            {/* Note: Head is child of Body, so it moves with it. 
+          But we overwrite rotation.y in useFrame to look at mouse. 
+          This creates the "360 turret" effect. */}
             <group ref={headRef} position={[0, 0.8, 0]}>
-                {/* Head Shape */}
-                <mesh castShadow>
-                    <boxGeometry args={[1, 0.8, 1]} />
-                    <meshStandardMaterial color="#111" />
-                    <Edges color="#00ffff" threshold={15} />
+
+                {/* Head Base (Neck/Collar) */}
+                <mesh position={[0, -0.2, 0]}>
+                    <cylinderGeometry args={[0.6, 0.6, 0.2]} />
+                    <meshStandardMaterial color="#333" />
                 </mesh>
 
-                {/* Cat Ears */}
-                <mesh position={[-0.3, 0.5, 0]} rotation={[0, 0, 0.2]}>
-                    <coneGeometry args={[0.2, 0.4, 4]} />
-                    <meshStandardMaterial color="#111" />
-                    <Edges color="#00ffff" threshold={15} />
-                </mesh>
-                <mesh position={[0.3, 0.5, 0]} rotation={[0, 0, -0.2]}>
-                    <coneGeometry args={[0.2, 0.4, 4]} />
-                    <meshStandardMaterial color="#111" />
-                    <Edges color="#00ffff" threshold={15} />
+                {/* Cat Head (Cyber Voxel Style) */}
+                <mesh castShadow position={[0, 0.3, 0]}>
+                    <boxGeometry args={[1, 0.8, 0.9]} />
+                    {/* We need face texture ONLY on front face. 
+              Box mapping is tricky with single texture.
+              We can use an array of materials or map UVs.
+              Array of materials is easier for BoxGeometry.
+              Order: Right, Left, Top, Bottom, Front, Back
+          */}
+                    <meshStandardMaterial attach="material-0" color="#1a1a2e" /> {/* Right */}
+                    <meshStandardMaterial attach="material-1" color="#1a1a2e" /> {/* Left */}
+                    <meshStandardMaterial attach="material-2" color="#1a1a2e" /> {/* Top */}
+                    <meshStandardMaterial attach="material-3" color="#1a1a2e" /> {/* Bottom */}
+                    <meshStandardMaterial attach="material-4" map={catFace} />   {/* Front (Face) */}
+                    <meshStandardMaterial attach="material-5" color="#1a1a2e" /> {/* Back */}
+
+                    <Edges color="#ff00ff" threshold={15} />
                 </mesh>
 
-                {/* Cannon */}
-                <mesh ref={cannonRef} position={[0, 0, 1]} rotation={[Math.PI / 2, 0, 0]}>
-                    <cylinderGeometry args={[0.1, 0.1, 1.5]} />
-                    <meshStandardMaterial color="#fff" emissive="#fff" emissiveIntensity={2} />
+                {/* Ears */}
+                <mesh position={[-0.35, 0.8, 0]} rotation={[0, 0, 0.2]}>
+                    <coneGeometry args={[0.15, 0.4, 4]} />
+                    <meshStandardMaterial color="#1a1a2e" />
+                    <Edges color="#ff00ff" />
+                </mesh>
+                <mesh position={[0.35, 0.8, 0]} rotation={[0, 0, -0.2]}>
+                    <coneGeometry args={[0.15, 0.4, 4]} />
+                    <meshStandardMaterial color="#1a1a2e" />
+                    <Edges color="#ff00ff" />
+                </mesh>
+
+                {/* Cannon/Eye Laser Emitter */}
+                <mesh ref={cannonRef} position={[0.2, 0.4, 0.5]} rotation={[Math.PI / 2, 0, 0]}>
+                    <cylinderGeometry args={[0.02, 0.02, 0.2]} />
+                    <meshBasicMaterial visible={false} />
                 </mesh>
             </group>
         </group>

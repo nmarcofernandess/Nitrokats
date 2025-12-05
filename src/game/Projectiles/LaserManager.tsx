@@ -12,6 +12,11 @@ const Laser = ({ id, position, rotation }: { id: string; position: Vector3; rota
     const targets = useGameStore((state) => state.targets);
     const removeTarget = useGameStore((state) => state.removeTarget);
     const addParticle = useGameStore((state) => state.addParticle);
+    const enemies = useGameStore((state) => state.enemies);
+    const removeEnemy = useGameStore((state) => state.removeEnemy);
+    const addScore = useGameStore((state) => state.addScore);
+    const playerPosition = useGameStore((state) => state.playerPosition);
+    const takeDamage = useGameStore((state) => state.takeDamage);
     const startPos = useRef(position.clone());
 
     useFrame((_, delta) => {
@@ -36,6 +41,34 @@ const Laser = ({ id, position, rotation }: { id: string; position: Vector3; rota
                 addParticle(target.position, '#ff0000', 10); // Explosion
                 break; // One hit per laser
             }
+        }
+
+        // Check Enemy Collision
+        for (const enemy of enemies) {
+            if (ref.current.position.distanceTo(enemy.position) < 1.5) {
+                // Determine if this laser is from player or enemy?
+                // For now, all lasers hurt enemies.
+                // Ideally enemies have health.
+                // Let's just kill them instantly for MVP satisfaction or add health logic.
+                // Store has health for enemies? Yes, we added it.
+                // But we don't have 'damageEnemy' action yet, only updateEnemy.
+                // Let's just kill them for now.
+                removeEnemy(enemy.id);
+                removeLaser(id);
+                addScore(100);
+                addParticle(enemy.position, '#ff00ff', 15); // Big Explosion
+                break;
+            }
+        }
+
+        // Check Player Collision (Friendly Fire or Enemy Fire - for now all lasers hurt player)
+        // Ideally we distinguish source, but for MVP chaos, let's say lasers hurt everyone.
+        // Actually, let's make it so only "Enemy" lasers hurt player, but we don't have source info yet.
+        // Hack: If laser is close to player, hurt player.
+        if (playerPosition && ref.current.position.distanceTo(playerPosition) < 1.5) {
+            takeDamage(10);
+            removeLaser(id);
+            addParticle(playerPosition, '#00ffff', 5); // Player hit sparks
         }
     });
 
