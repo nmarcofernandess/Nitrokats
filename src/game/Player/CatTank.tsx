@@ -29,6 +29,11 @@ export const CatTank = () => {
     const gameState = useGameStore((state) => state.gameState);
     const togglePause = useGameStore((state) => state.togglePause);
     const isPaused = useGameStore((state) => state.isPaused);
+    const gameMode = useGameStore((state) => state.gameMode);
+
+    // Animation Ref for Bipedal Legs
+    const leftLegRef = useRef<Mesh>(null);
+    const rightLegRef = useRef<Mesh>(null);
 
     // Health Regeneration Logic
     useFrame((_, delta) => {
@@ -236,106 +241,227 @@ export const CatTank = () => {
 
         // Update Store with Position (Removed for Performance)
         // setPlayerPosition(bodyRef.current.position.clone());
+
+        // --- Bipedal Animation (Zombie Mode Only) ---
+        if (gameMode === 'zombie' && leftLegRef.current && rightLegRef.current) {
+            const isMoving = keys.w || keys.s;
+            if (isMoving) {
+                const time = state.clock.elapsedTime * 15;
+                leftLegRef.current.rotation.x = Math.sin(time) * 0.5;
+                rightLegRef.current.rotation.x = Math.sin(time + Math.PI) * 0.5;
+            } else {
+                leftLegRef.current.rotation.x = 0;
+                rightLegRef.current.rotation.x = 0;
+            }
+        }
     });
 
     return (
         <>
             <Crosshair position={aimPos} />
-            <group ref={bodyRef} position={[0, 0.5, 0]}>
-                {/* CHASSIS (The Box) */}
-                <mesh castShadow receiveShadow position={[0, 0.25, 0]}>
-                    <boxGeometry args={[1.8, 0.8, 2.2]} />
-                    <meshStandardMaterial map={chassis} />
-                    <Edges color="#00ffff" threshold={15} />
 
-                    {/* TAILLIGHTS (Back of Chassis) */}
-                    <group position={[0, 0, -1.1]}>
-                        {/* Left Taillight */}
-                        <mesh position={[-0.6, 0, 0]}>
-                            <boxGeometry args={[0.3, 0.2, 0.1]} />
-                            <meshStandardMaterial color="#ff0000" emissive="#ff0000" emissiveIntensity={4} toneMapped={false} />
-                        </mesh>
-                        {/* Removed PointLight for performance */}
+            <group ref={bodyRef} position={[0, gameMode === 'zombie' ? 1.0 : 0.5, 0]}>
 
-                        {/* Right Taillight */}
-                        <mesh position={[0.6, 0, 0]}>
-                            <boxGeometry args={[0.3, 0.2, 0.1]} />
-                            <meshStandardMaterial color="#ff0000" emissive="#ff0000" emissiveIntensity={4} toneMapped={false} />
+                {/* --- CLASSIC TANK MODE --- */}
+                {gameMode === 'classic' && (
+                    <group>
+                        {/* CHASSIS (The Box) */}
+                        <mesh castShadow receiveShadow position={[0, 0.25, 0]}>
+                            <boxGeometry args={[1.8, 0.8, 2.2]} />
+                            <meshStandardMaterial map={chassis} />
+                            <Edges color="#00ffff" threshold={15} />
+
+                            {/* TAILLIGHTS (Back of Chassis) */}
+                            <group position={[0, 0, -1.1]}>
+                                {/* Left Taillight */}
+                                <mesh position={[-0.6, 0, 0]}>
+                                    <boxGeometry args={[0.3, 0.2, 0.1]} />
+                                    <meshStandardMaterial color="#ff0000" emissive="#ff0000" emissiveIntensity={4} toneMapped={false} />
+                                </mesh>
+
+                                {/* Right Taillight */}
+                                <mesh position={[0.6, 0, 0]}>
+                                    <boxGeometry args={[0.3, 0.2, 0.1]} />
+                                    <meshStandardMaterial color="#ff0000" emissive="#ff0000" emissiveIntensity={4} toneMapped={false} />
+                                </mesh>
+                            </group>
                         </mesh>
-                        {/* Removed PointLight for performance */}
+
+                        {/* HEADLIGHTS (Front of Chassis) - Visual Only */}
+                        <group position={[0, 0.2, 1.1]}>
+                            {/* Left Headlight */}
+                            <mesh position={[-0.6, 0, 0]}>
+                                <boxGeometry args={[0.3, 0.2, 0.1]} />
+                                <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={5} toneMapped={false} />
+                            </mesh>
+
+                            {/* Right Headlight */}
+                            <mesh position={[0.6, 0, 0]}>
+                                <boxGeometry args={[0.3, 0.2, 0.1]} />
+                                <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={5} toneMapped={false} />
+                            </mesh>
+                        </group>
+
+                        {/* TRACKS (Visual only) */}
+                        <mesh position={[-1, 0, 0]}>
+                            <boxGeometry args={[0.4, 0.6, 2.4]} />
+                            <meshStandardMaterial map={tracks} />
+                        </mesh>
+                        <mesh position={[1, 0, 0]}>
+                            <boxGeometry args={[0.4, 0.6, 2.4]} />
+                            <meshStandardMaterial map={tracks} />
+                        </mesh>
                     </group>
-                </mesh>
+                )}
 
-                {/* HEADLIGHTS (Front of Chassis) - Visual Only */}
-                <group position={[0, 0.2, 1.1]}>
-                    {/* Left Headlight */}
-                    <mesh position={[-0.6, 0, 0]}>
-                        <boxGeometry args={[0.3, 0.2, 0.1]} />
-                        <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={5} toneMapped={false} />
-                    </mesh>
+                {/* --- ZOMBIE SOLDIER MODE --- */}
+                {gameMode === 'zombie' && (
+                    <group>
+                        {/* LEGS */}
+                        <group position={[0, -0.8, 0]}>
+                            <mesh ref={leftLegRef} position={[-0.3, 0, 0]}>
+                                <boxGeometry args={[0.3, 0.8, 0.3]} />
+                                <meshStandardMaterial color="#333" />
+                            </mesh>
+                            <mesh ref={rightLegRef} position={[0.3, 0, 0]}>
+                                <boxGeometry args={[0.3, 0.8, 0.3]} />
+                                <meshStandardMaterial color="#333" />
+                            </mesh>
+                        </group>
 
-                    {/* Right Headlight */}
-                    <mesh position={[0.6, 0, 0]}>
-                        <boxGeometry args={[0.3, 0.2, 0.1]} />
-                        <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={5} toneMapped={false} />
-                    </mesh>
-                </group>
+                        {/* TORSO */}
+                        <mesh position={[0, 0, 0]}>
+                            <boxGeometry args={[0.8, 0.9, 0.5]} />
+                            <meshStandardMaterial color="#222" />
+                            {/* Armor Plate */}
+                            <mesh position={[0, 0.1, 0.26]}>
+                                <boxGeometry args={[0.6, 0.6, 0.1]} />
+                                <meshStandardMaterial color="#444" />
+                            </mesh>
+                        </mesh>
 
-                {/* TRACKS (Visual only) */}
-                <mesh position={[-1, 0, 0]}>
-                    <boxGeometry args={[0.4, 0.6, 2.4]} />
-                    <meshStandardMaterial map={tracks} />
-                </mesh>
-                <mesh position={[1, 0, 0]}>
-                    <boxGeometry args={[0.4, 0.6, 2.4]} />
-                    <meshStandardMaterial map={tracks} />
-                </mesh>
+                        {/* ARMS holding GUN */}
+                        <group position={[0.5, 0.2, 0.4]} rotation={[0, -0.2, 0]}>
+                            {/* Right Arm */}
+                            <mesh position={[0, 0, 0]} rotation={[0.5, 0, 0]}>
+                                <boxGeometry args={[0.2, 0.6, 0.2]} />
+                                <meshStandardMaterial color="#333" />
+                            </mesh>
+                            {/* Minigun Visual */}
+                            <mesh position={[0.1, -0.3, 0.5]} rotation={[0, 0, 0]}>
+                                <boxGeometry args={[0.2, 0.2, 1.2]} />
+                                <meshStandardMaterial color="#666" />
+                            </mesh>
+                            {/* Muzzle Flash Point (Though cannonRef is on head for gameplay aim consistency, 
+                                 or we move cannonRef? User expects gun to shoot.
+                                 Currently head rotates to aim. Gun is on body.
+                                 Body rotates to WASD. This means gun won't aim at mouse IF body doesn't face mouse.
+                                 But in our logic: Body faces WASD/Keys. Head faces Mouse.
+                                 Tank: Turret rotates.
+                                 Soldier: Usually whole body rotates to aim? Or Waist?
+                                 
+                                 If I put Gun on Body, and Body moves with WASD, Gun points where you walk.
+                                 If you want to aim with mouse, Gun should be child of Head/Torso-Twist.
+                                 Current Logic: `headRef` rotates to mouse. 
+                                 Let's attach the GUN to the HEAD group for Zombie Mode so it aims?
+                                 Or make the Soldier ALWAYS face the mouse (Strafe logic).
+                                 
+                                 Current Tank Logic:
+                                 A/D rotates Body.
+                                 Mouse rotates Head.
+                                 
+                                 If visual is Soldier:
+                                 It looks weird if I walk North but aim East and my body faces North (Gun points North) but bullets come from Head (East).
+                                 
+                                 Solution:
+                                 Attach Gun to HeadRef? 
+                                 Yes. Imagine he holds the gun up to his eye/shoulder which rotates.
+                             */}
+                        </group>
+                    </group>
+                )}
 
-                {/* TANK HEAD (The Cat) */}
-                {/* Note: Head is child of Body, so it moves with it. 
-          But we overwrite rotation.y in useFrame to look at mouse. 
-          This creates the "360 turret" effect. */}
-                <group ref={headRef} position={[0, 0.8, 0]}>
+                {/* TANK HEAD / SOLDIER HEAD */}
+                {/* Visuals adjusted based on mode */}
+                <group ref={headRef} position={[0, gameMode === 'zombie' ? 0.6 : 0.8, 0]}>
 
-                    {/* Head Base (Neck/Collar) */}
-                    <mesh position={[0, -0.2, 0]}>
-                        <cylinderGeometry args={[0.6, 0.6, 0.2]} />
-                        <meshStandardMaterial color="#333" />
-                    </mesh>
+                    {gameMode === 'classic' ? (
+                        // CLASSIC TANK TURRET
+                        <group>
+                            {/* Head Base */}
+                            <mesh position={[0, -0.2, 0]}>
+                                <cylinderGeometry args={[0.6, 0.6, 0.2]} />
+                                <meshStandardMaterial color="#333" />
+                            </mesh>
+                            {/* Cat Head Cube */}
+                            <mesh castShadow position={[0, 0.3, 0]}>
+                                <boxGeometry args={[1, 0.8, 0.9]} />
+                                <meshStandardMaterial attach="material-0" color="#1a1a2e" />
+                                <meshStandardMaterial attach="material-1" color="#1a1a2e" />
+                                <meshStandardMaterial attach="material-2" color="#1a1a2e" />
+                                <meshStandardMaterial attach="material-3" color="#1a1a2e" />
+                                <meshStandardMaterial attach="material-4" map={catFace} />
+                                <meshStandardMaterial attach="material-5" color="#1a1a2e" />
+                                <Edges color="#ff00ff" threshold={15} />
+                            </mesh>
+                            {/* Ears */}
+                            <mesh position={[-0.35, 0.8, 0]} rotation={[0, 0, 0.2]}>
+                                <coneGeometry args={[0.15, 0.4, 4]} />
+                                <meshStandardMaterial color="#1a1a2e" />
+                                <Edges color="#ff00ff" />
+                            </mesh>
+                            <mesh position={[0.35, 0.8, 0]} rotation={[0, 0, -0.2]}>
+                                <coneGeometry args={[0.15, 0.4, 4]} />
+                                <meshStandardMaterial color="#1a1a2e" />
+                                <Edges color="#ff00ff" />
+                            </mesh>
+                        </group>
+                    ) : (
+                        // ZOMBIE MODE HEAD + GUN (Attached to Head for Aiming)
+                        <group>
+                            {/* Smaller Head for Soldier */}
+                            <mesh castShadow position={[0, 0, 0]}>
+                                <boxGeometry args={[0.6, 0.5, 0.5]} />
+                                <meshStandardMaterial attach="material-0" color="#1a1a2e" />
+                                <meshStandardMaterial attach="material-1" color="#1a1a2e" />
+                                <meshStandardMaterial attach="material-2" color="#1a1a2e" />
+                                <meshStandardMaterial attach="material-3" color="#1a1a2e" />
+                                <meshStandardMaterial attach="material-4" map={catFace} />
+                                <meshStandardMaterial attach="material-5" color="#1a1a2e" />
+                            </mesh>
+                            {/* Ears */}
+                            <mesh position={[-0.2, 0.3, 0]} rotation={[0, 0, 0.2]}>
+                                <coneGeometry args={[0.1, 0.2, 4]} />
+                                <meshStandardMaterial color="#1a1a2e" />
+                            </mesh>
+                            <mesh position={[0.2, 0.3, 0]} rotation={[0, 0, -0.2]}>
+                                <coneGeometry args={[0.1, 0.2, 4]} />
+                                <meshStandardMaterial color="#1a1a2e" />
+                            </mesh>
 
-                    {/* Cat Head (Cyber Voxel Style) */}
-                    <mesh castShadow position={[0, 0.3, 0]}>
-                        <boxGeometry args={[1, 0.8, 0.9]} />
-                        {/* We need face texture ONLY on front face. 
-              Box mapping is tricky with single texture.
-              We can use an array of materials or map UVs.
-              Array of materials is easier for BoxGeometry.
-              Order: Right, Left, Top, Bottom, Front, Back
-          */}
-                        <meshStandardMaterial attach="material-0" color="#1a1a2e" /> {/* Right */}
-                        <meshStandardMaterial attach="material-1" color="#1a1a2e" /> {/* Left */}
-                        <meshStandardMaterial attach="material-2" color="#1a1a2e" /> {/* Top */}
-                        <meshStandardMaterial attach="material-3" color="#1a1a2e" /> {/* Bottom */}
-                        <meshStandardMaterial attach="material-4" map={catFace} />   {/* Front (Face) */}
-                        <meshStandardMaterial attach="material-5" color="#1a1a2e" /> {/* Back */}
+                            {/* MACHINE GUN (Attached to Head/Shoulder) */}
+                            <group position={[0.4, -0.2, 0.4]}>
+                                {/* Gun Body */}
+                                <mesh>
+                                    <boxGeometry args={[0.15, 0.2, 0.8]} />
+                                    <meshStandardMaterial color="#444" />
+                                </mesh>
+                                {/* Barrels (Minigun style) */}
+                                <mesh position={[0, 0, 0.4]} rotation={[Math.PI / 2, 0, 0]}>
+                                    <cylinderGeometry args={[0.08, 0.08, 0.4]} />
+                                    <meshStandardMaterial color="#111" />
+                                </mesh>
+                            </group>
+                        </group>
+                    )}
 
-                        <Edges color="#ff00ff" threshold={15} />
-                    </mesh>
-
-                    {/* Ears */}
-                    <mesh position={[-0.35, 0.8, 0]} rotation={[0, 0, 0.2]}>
-                        <coneGeometry args={[0.15, 0.4, 4]} />
-                        <meshStandardMaterial color="#1a1a2e" />
-                        <Edges color="#ff00ff" />
-                    </mesh>
-                    <mesh position={[0.35, 0.8, 0]} rotation={[0, 0, -0.2]}>
-                        <coneGeometry args={[0.15, 0.4, 4]} />
-                        <meshStandardMaterial color="#1a1a2e" />
-                        <Edges color="#ff00ff" />
-                    </mesh>
-
-                    {/* Cannon/Eye Laser Emitter */}
-                    <mesh ref={cannonRef} position={[0.2, 0.4, 0.5]} rotation={[Math.PI / 2, 0, 0]}>
+                    {/* Cannon/Eye Laser Emitter (Invisible Anchor) */}
+                    {/* Position changes based on mode to align with visuals */}
+                    <mesh
+                        ref={cannonRef}
+                        position={gameMode === 'zombie' ? [0.4, -0.2, 0.8] : [0.2, 0.4, 0.5]}
+                        rotation={[Math.PI / 2, 0, 0]}
+                    >
                         <cylinderGeometry args={[0.02, 0.02, 0.2]} />
                         <meshBasicMaterial visible={false} />
                     </mesh>
