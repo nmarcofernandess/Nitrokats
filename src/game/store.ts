@@ -6,6 +6,7 @@ interface LaserData {
     id: string;
     position: Vector3;
     rotation: Euler;
+    source: 'player' | 'enemy';
 }
 
 interface TargetData {
@@ -28,12 +29,19 @@ interface EnemyData {
     health: number;
 }
 
+interface PowerUpData {
+    id: string;
+    position: Vector3;
+    type: 'spread' | 'rapid';
+}
+
 interface GameState {
     lasers: LaserData[];
     targets: TargetData[];
     enemies: EnemyData[];
+    powerUps: PowerUpData[];
     particles: ParticleData[];
-    addLaser: (position: Vector3, rotation: Euler) => void;
+    addLaser: (position: Vector3, rotation: Euler, source: 'player' | 'enemy') => void;
     removeLaser: (id: string) => void;
     addTarget: (position: Vector3) => void;
     removeTarget: (id: string) => void;
@@ -44,30 +52,55 @@ interface GameState {
     playerPosition: Vector3;
     setPlayerPosition: (pos: Vector3) => void;
     score: number;
+    kills: number;
+    wave: number;
     health: number;
     gameOver: boolean;
     addScore: (points: number) => void;
+    incrementKills: () => void;
+    nextWave: () => void;
     takeDamage: (amount: number) => void;
     heal: (amount: number) => void;
+
+    // Game Flow
+    gameState: 'menu' | 'playing' | 'paused' | 'gameover';
+    isPaused: boolean;
+    startGame: () => void;
     restartGame: () => void;
+    togglePause: () => void;
+    goToMenu: () => void;
+
     addEnemy: (position: Vector3) => void;
     removeEnemy: (id: string) => void;
     updateEnemy: (id: string, position: Vector3, rotation: number) => void;
+
+    // Weapon State
+    weaponType: 'normal' | 'spread' | 'rapid';
+    weaponTimer: number;
+    spawnPowerUp: (position: Vector3) => void;
+    collectPowerUp: (id: string, type: 'spread' | 'rapid') => void;
 }
 
 export const useGameStore = create<GameState>((set) => ({
     lasers: [],
     targets: [],
     enemies: [],
+    powerUps: [],
     particles: [],
     shake: 0,
     playerPosition: new Vector3(0, 0, 0),
     score: 0,
+    kills: 0,
+    wave: 1,
     health: 100,
     gameOver: false,
-    addLaser: (position, rotation) =>
+    gameState: 'menu',
+    isPaused: false,
+    weaponType: 'normal',
+    weaponTimer: 0,
+    addLaser: (position, rotation, source) =>
         set((state) => ({
-            lasers: [...state.lasers, { id: uuidv4(), position, rotation }],
+            lasers: [...state.lasers, { id: uuidv4(), position, rotation, source }],
         })),
     removeLaser: (id) =>
         set((state) => ({
@@ -108,6 +141,8 @@ export const useGameStore = create<GameState>((set) => ({
     triggerShake: (intensity) => set({ shake: intensity }),
     setPlayerPosition: (pos) => set({ playerPosition: pos }),
     addScore: (points) => set((state) => ({ score: state.score + points })),
+    incrementKills: () => set((state) => ({ kills: state.kills + 1 })),
+    nextWave: () => set((state) => ({ wave: state.wave + 1 })),
     takeDamage: (amount) => set((state) => {
         const newHealth = Math.max(0, state.health - amount);
         return {
@@ -116,15 +151,34 @@ export const useGameStore = create<GameState>((set) => ({
         };
     }),
     heal: (amount) => set((state) => ({ health: Math.min(100, state.health + amount) })),
+    startGame: () => set({ gameState: 'playing', isPaused: false, score: 0, kills: 0, wave: 1, health: 100, gameOver: false, enemies: [], lasers: [] }),
     restartGame: () => set({
         score: 0,
+        kills: 0,
+        wave: 1,
+        health: 100,
+        gameOver: false,
+        gameState: 'playing',
+        isPaused: false,
+        lasers: [],
+        particles: [],
+        enemies: []
+    }),
+    togglePause: () => set((state) => ({
+        isPaused: !state.isPaused,
+        gameState: state.isPaused ? 'playing' : 'paused'
+    })),
+    goToMenu: () => set({
+        gameState: 'menu',
+        isPaused: false,
+        score: 0,
+        kills: 0,
+        wave: 1,
         health: 100,
         gameOver: false,
         lasers: [],
         particles: [],
-        enemies: [] // Clear enemies on restart
-        // Note: Targets/Enemies need to be reset too, but they are components.
-        // Ideally we'd have a 'gameKey' to remount the scene or reset their state.
+        enemies: []
     }),
     addEnemy: (position) => set((state) => ({
         enemies: [...state.enemies, { id: uuidv4(), position, rotation: 0, health: 30 }]
@@ -134,5 +188,19 @@ export const useGameStore = create<GameState>((set) => ({
     })),
     updateEnemy: (id, position, rotation) => set((state) => ({
         enemies: state.enemies.map(e => e.id === id ? { ...e, position, rotation } : e)
+    })),
+    spawnPowerUp: (position) => set((state) => {
+        // 30% chance to spawn drop
+        if (Math.random() > 0.3) return {};
+
+        const type = Math.random() > 0.5 ? 'spread' : 'rapid';
+        return {
+            powerUps: [...state.powerUps, { id: uuidv4(), position, type }]
+        };
+    }),
+    collectPowerUp: (id, type) => set((state) => ({
+        powerUps: state.powerUps.filter(p => p.id !== id),
+        weaponType: type,
+        weaponTimer: 10 // 10 seconds of powerup
     })),
 }));

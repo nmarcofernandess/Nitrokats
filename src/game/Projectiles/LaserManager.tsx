@@ -2,28 +2,37 @@ import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Vector3, Group } from 'three';
 import { useGameStore } from '../store';
+import { audioManager } from '../Utils/AudioManager';
+import { checkCircleCollision } from '../Utils/CollisionUtils';
+import { gameRegistry } from '../Utils/ObjectRegistry';
 
 const LASER_SPEED = 20;
 const MAX_DISTANCE = 100;
 
-const Laser = ({ id, position, rotation }: { id: string; position: Vector3; rotation: any }) => {
+const Laser = ({ id, position, rotation, source }: { id: string; position: Vector3; rotation: any; source: 'player' | 'enemy' }) => {
     const ref = useRef<Group>(null);
     const removeLaser = useGameStore((state) => state.removeLaser);
     const targets = useGameStore((state) => state.targets);
     const removeTarget = useGameStore((state) => state.removeTarget);
     const addParticle = useGameStore((state) => state.addParticle);
-    const enemies = useGameStore((state) => state.enemies);
+    const spawnPowerUp = useGameStore((state) => state.spawnPowerUp);
+    const incrementKills = useGameStore((state) => state.incrementKills);
     const removeEnemy = useGameStore((state) => state.removeEnemy);
     const addScore = useGameStore((state) => state.addScore);
-    const playerPosition = useGameStore((state) => state.playerPosition);
     const takeDamage = useGameStore((state) => state.takeDamage);
+    const wave = useGameStore((state) => state.wave);
+    const isPaused = useGameStore((state) => state.isPaused);
+
+    // Base damage is 10, increases by 20% per wave
+    const getEnemyDamage = () => Math.floor(10 * (1 + (wave - 1) * 0.2));
     const startPos = useRef(position.clone());
 
     useFrame((_, delta) => {
         if (!ref.current) return;
+        // Respect pause state
+        if (isPaused) return;
 
         // Move forward in local Z (or whatever direction the tank was facing)
-        // Since we pass the rotation, we can just move along the forward vector
         ref.current.translateZ(LASER_SPEED * delta);
 
         // Check distance
@@ -33,42 +42,42 @@ const Laser = ({ id, position, rotation }: { id: string; position: Vector3; rota
         }
 
         // Check collision with targets
-        // Simple distance check (O(N) per laser)
         for (const target of targets) {
             if (ref.current.position.distanceTo(target.position) < 1) {
                 removeTarget(target.id);
                 removeLaser(id);
-                addParticle(target.position, '#ff0000', 10); // Explosion
-                break; // One hit per laser
-            }
-        }
-
-        // Check Enemy Collision
-        for (const enemy of enemies) {
-            if (ref.current.position.distanceTo(enemy.position) < 1.5) {
-                // Determine if this laser is from player or enemy?
-                // For now, all lasers hurt enemies.
-                // Ideally enemies have health.
-                // Let's just kill them instantly for MVP satisfaction or add health logic.
-                // Store has health for enemies? Yes, we added it.
-                // But we don't have 'damageEnemy' action yet, only updateEnemy.
-                // Let's just kill them for now.
-                removeEnemy(enemy.id);
-                removeLaser(id);
-                addScore(100);
-                addParticle(enemy.position, '#ff00ff', 15); // Big Explosion
+                addParticle(target.position, '#ff0000', 10);
                 break;
             }
         }
 
-        // Check Player Collision (Friendly Fire or Enemy Fire - for now all lasers hurt player)
-        // Ideally we distinguish source, but for MVP chaos, let's say lasers hurt everyone.
-        // Actually, let's make it so only "Enemy" lasers hurt player, but we don't have source info yet.
-        // Hack: If laser is close to player, hurt player.
-        if (playerPosition && ref.current.position.distanceTo(playerPosition) < 1.5) {
-            takeDamage(10);
-            removeLaser(id);
-            addParticle(playerPosition, '#00ffff', 5); // Player hit sparks
+        // PLAYER LASERS hit ENEMIES (use gameRegistry for real-time positions!)
+        if (source === 'player') {
+            const enemies = gameRegistry.getEnemies();
+            for (const enemy of enemies) {
+                // Use the actual THREE.js ref position, not store position
+                if (ref.current.position.distanceTo(enemy.ref.position) < 1.5) {
+                    removeEnemy(enemy.id);
+                    removeLaser(id);
+                    addScore(100);
+                    incrementKills();
+                    addParticle(enemy.ref.position.clone(), '#ff00ff', 15);
+                    audioManager.playExplosion();
+                    spawnPowerUp(enemy.ref.position.clone());
+                    break;
+                }
+            }
+        }
+
+        // ENEMY LASERS hit PLAYER (use gameRegistry for real-time position!)
+        if (source === 'enemy') {
+            const playerPos = gameRegistry.getPlayerPosition();
+            if (playerPos && checkCircleCollision(ref.current.position, 0.5, playerPos, 1.5)) {
+                takeDamage(getEnemyDamage());
+                removeLaser(id);
+                addParticle(ref.current.position, '#00ffff', 5);
+                audioManager.playHit();
+            }
         }
     });
 

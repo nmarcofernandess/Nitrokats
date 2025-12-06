@@ -1,13 +1,29 @@
-import { useEffect } from 'react';
-import { Vector3 } from 'three';
+import { useRef, useEffect } from 'react';
+import { Vector3, Group } from 'three';
 import { useGameStore } from '../store';
+import { Edges } from '@react-three/drei';
+import { gameRegistry } from '../Utils/ObjectRegistry';
 
-const Target = ({ position }: { id: string; position: Vector3 }) => {
+const Target = ({ id, position }: { id: string; position: Vector3 }) => {
+    const meshRef = useRef<Group>(null!);
+
+    useEffect(() => {
+        if (meshRef.current) {
+            gameRegistry.registerBlock(id, meshRef.current);
+        }
+        return () => {
+            gameRegistry.blocks.delete(id);
+        };
+    }, [id]);
+
     return (
-        <mesh position={position}>
-            <boxGeometry args={[1, 1, 1]} />
-            <meshStandardMaterial color="#ff0000" emissive="#ff0000" emissiveIntensity={0.5} />
-        </mesh>
+        <group ref={meshRef} position={position}>
+            <mesh>
+                <boxGeometry args={[1, 1, 1]} />
+                <meshStandardMaterial color="#ff0000" emissive="#ff0000" emissiveIntensity={0.5} />
+                <Edges scale={1.01} color="black" />
+            </mesh>
+        </group>
     );
 };
 
@@ -29,7 +45,7 @@ export const TargetManager = () => {
     return (
         <>
             {targets.map((target) => (
-                <Target key={target.id} {...target} />
+                <Target key={target.id} id={target.id} position={target.position} />
             ))}
         </>
     );
