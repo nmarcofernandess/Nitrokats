@@ -9,6 +9,7 @@ import { checkCircleCollision, checkCircleAABBCollision } from '../Utils/Collisi
 import { audioManager } from '../Utils/AudioManager';
 
 import { gameRegistry } from '../Utils/ObjectRegistry';
+import { aiManager } from '../Utils/AIManager';
 
 const MOVEMENT_SPEED = 8;
 const ROTATION_SPEED = 2.5;
@@ -44,11 +45,23 @@ export const CatTank = () => {
 
     // We don't need enemies/targets from store for collision anymore, we use Registry
     const weaponType = useGameStore((state) => state.weaponType);
+    const setWeaponType = useGameStore((state) => state.setWeaponType);
     const recoilRef = useRef(0);
     const lastFireTime = useRef(0);
 
+    // Power-Up Duration Timer
+    useEffect(() => {
+        if (weaponType !== 'default') {
+            const timer = setTimeout(() => {
+                setWeaponType('default');
+                audioManager.playPowerUp(); // Play sound to indicate end? Or maybe a power down sound. Re-using for now.
+            }, 10000); // 10 Seconds
+            return () => clearTimeout(timer);
+        }
+    }, [weaponType, setWeaponType]);
+
     // Weapon Stats
-    const getFireRate = () => weaponType === 'rapid' ? 0.05 : 0.2;
+    const getFireRate = () => 0.2; // Default fire rate for everyone now
 
     // Input States
     const [keys, setKeys] = useState({ w: false, a: false, s: false, d: false });
@@ -97,18 +110,32 @@ export const CatTank = () => {
     useFrame((state, delta) => {
         if (!bodyRef.current || !headRef.current || gameOver || gameState !== 'playing') return;
 
-        // --- Body Movement (Directional) ---
-        const moveDir = new Vector3(0, 0, 0);
-        if (keys.w) moveDir.z -= 1;
-        if (keys.s) moveDir.z += 1;
-        if (keys.a) moveDir.x -= 1;
-        if (keys.d) moveDir.x += 1;
+        // --- Tank/Car Movement Logic ---
+        // W/S = Move Forward/Backward relative to rotation
+        // A/D = Rotate Left/Right
 
-        if (moveDir.length() > 0) {
-            moveDir.normalize();
+        // Rotation
+        if (keys.a) bodyRef.current.rotation.y += ROTATION_SPEED * delta;
+        if (keys.d) bodyRef.current.rotation.y -= ROTATION_SPEED * delta;
 
-            // Predictive Movement
-            const nextPos = bodyRef.current.position.clone().add(moveDir.clone().multiplyScalar(MOVEMENT_SPEED * delta));
+        // Forward/Backward Movement
+        let speed = 0;
+        if (keys.w) speed = MOVEMENT_SPEED;
+        if (keys.s) speed = -MOVEMENT_SPEED;
+
+        if (speed !== 0) {
+            const forward = new Vector3(0, 0, 1).applyAxisAngle(new Vector3(0, 1, 0), bodyRef.current.rotation.y);
+            // In Three.js, often -Z is forward, but check your model. 
+            // In our isometric setup, usually +Z is towards camera, -Z away.
+            // Let's assume standard math: 0 rotation = facing +Z? 
+            // Let's test standard forward vector application.
+
+            // Correction: applyEuler with 0,0,1 might need checking model orientation.
+            // If model faces +Z by default:
+            const moveVec = forward.multiplyScalar(speed * delta);
+
+            const nextPos = bodyRef.current.position.clone().add(moveVec);
+
             let canMove = true;
 
             // 1. Check Enemy Collisions (Registry)
@@ -134,19 +161,10 @@ export const CatTank = () => {
             if (canMove) {
                 bodyRef.current.position.copy(nextPos);
             }
-
-            // Rotate Body to face movement direction (smoothly)
-            const targetRotation = Math.atan2(moveDir.x, moveDir.z);
-            const currentRotation = bodyRef.current.rotation.y;
-
-            // Simple lerp for rotation
-            let diff = targetRotation - currentRotation;
-            // Normalize angle to -PI to PI
-            while (diff > Math.PI) diff -= Math.PI * 2;
-            while (diff < -Math.PI) diff += Math.PI * 2;
-
-            bodyRef.current.rotation.y += diff * ROTATION_SPEED * delta;
         }
+
+        // Sync to AI Manager for Enemy Targeting
+        aiManager.updatePlayerPosition(bodyRef.current.position.x, bodyRef.current.position.y, bodyRef.current.position.z);
 
         // Collision Check (Simple Sphere) - REMOVED (Replaced by predictive above)
         // If we hit an enemy, push back.
@@ -231,8 +249,40 @@ export const CatTank = () => {
                 <mesh castShadow receiveShadow position={[0, 0.25, 0]}>
                     <boxGeometry args={[1.8, 0.8, 2.2]} />
                     <meshStandardMaterial map={chassis} />
-                    <Edges color="#00ffff" threshold={15} /> {/* Keep Neon for style? Or remove? User said "pixels perfect but can't understand". Let's keep neon as highlight but rely on texture. */}
+                    <Edges color="#00ffff" threshold={15} />
+
+                    {/* TAILLIGHTS (Back of Chassis) */}
+                    <group position={[0, 0, -1.1]}>
+                        {/* Left Taillight */}
+                        <mesh position={[-0.6, 0, 0]}>
+                            <boxGeometry args={[0.3, 0.2, 0.1]} />
+                            <meshStandardMaterial color="#ff0000" emissive="#ff0000" emissiveIntensity={4} toneMapped={false} />
+                        </mesh>
+                        {/* Removed PointLight for performance */}
+
+                        {/* Right Taillight */}
+                        <mesh position={[0.6, 0, 0]}>
+                            <boxGeometry args={[0.3, 0.2, 0.1]} />
+                            <meshStandardMaterial color="#ff0000" emissive="#ff0000" emissiveIntensity={4} toneMapped={false} />
+                        </mesh>
+                        {/* Removed PointLight for performance */}
+                    </group>
                 </mesh>
+
+                {/* HEADLIGHTS (Front of Chassis) - Visual Only */}
+                <group position={[0, 0.2, 1.1]}>
+                    {/* Left Headlight */}
+                    <mesh position={[-0.6, 0, 0]}>
+                        <boxGeometry args={[0.3, 0.2, 0.1]} />
+                        <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={5} toneMapped={false} />
+                    </mesh>
+
+                    {/* Right Headlight */}
+                    <mesh position={[0.6, 0, 0]}>
+                        <boxGeometry args={[0.3, 0.2, 0.1]} />
+                        <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={5} toneMapped={false} />
+                    </mesh>
+                </group>
 
                 {/* TRACKS (Visual only) */}
                 <mesh position={[-1, 0, 0]}>

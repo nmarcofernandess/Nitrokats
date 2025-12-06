@@ -5,7 +5,7 @@ import { Edges } from '@react-three/drei';
 import { useGameStore } from '../store';
 import { gameRegistry } from '../Utils/ObjectRegistry';
 
-export const PowerUp = ({ id, position, type }: { id: string; position: Vector3; type: 'spread' | 'rapid' }) => {
+export const PowerUp = ({ id, position, type }: { id: string; position: Vector3; type: 'spread' | 'health' }) => {
     const ref = useRef<Group>(null);
     // const playerPosition = useGameStore((state) => state.playerPosition); // Deprecated in favor of Registry
     const collectPowerUp = useGameStore((state) => state.collectPowerUp);

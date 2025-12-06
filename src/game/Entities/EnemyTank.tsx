@@ -1,16 +1,17 @@
 import { useRef, useState, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Vector3, Group } from 'three';
+import { Vector3 as ThreeVector3, Group, Euler } from 'three'; // Renamed to avoid collision with Yuka
 import { Edges } from '@react-three/drei';
+import { Vehicle, ArriveBehavior } from 'yuka';
 import { useGameStore } from '../store';
+import { aiManager } from '../Utils/AIManager';
 import { generateCatFaceTexture, generateTracksTexture, generateChassisTexture } from '../Utils/TextureGenerator';
 
 import { gameRegistry } from '../Utils/ObjectRegistry';
 
 const ENEMY_SPEED = 3;
-const CHASE_DISTANCE = 30;
 const SHOOT_DISTANCE = 15;
-const SHOOT_COOLDOWN = 2;
+const SHOOT_COOLDOWN = 2.0;
 
 // Enemy Manager Component
 export const EnemyManager = () => {
@@ -43,7 +44,7 @@ export const EnemyManager = () => {
                 const radius = 20 + Math.random() * 10;
                 const x = Math.sin(angle) * radius;
                 const z = Math.cos(angle) * radius;
-                addEnemy(new Vector3(x, 0, z));
+                addEnemy(new ThreeVector3(x, 0, z));
             }
         }
     }, [wave, gameState, addEnemy, enemies.length]);
@@ -57,9 +58,10 @@ export const EnemyManager = () => {
     );
 };
 
-const EnemyTank = ({ data }: { data: { id: string, position: Vector3, rotation: number } }) => {
+const EnemyTank = ({ data }: { data: { id: string, position: ThreeVector3, rotation: number } }) => {
     const bodyRef = useRef<Group>(null);
     const headRef = useRef<Group>(null);
+    const vehicleRef = useRef<Vehicle>(null);
 
     // const playerPosition = useGameStore((state) => state.playerPosition); // REMOVED store sub
     const addLaser = useGameStore((state) => state.addLaser);
@@ -81,67 +83,123 @@ const EnemyTank = ({ data }: { data: { id: string, position: Vector3, rotation: 
     const [tracks] = useState(() => generateTracksTexture());
     const [chassis] = useState(() => generateChassisTexture('#4a2a2a'));
 
-    // Local state for smooth movement before syncing to store (optimization)
-    // Actually, let's sync to store every frame so collision works? 
-    // Or just use local ref for logic and sync periodically?
-    // For MVP, sync every frame is fine for 3 enemies.
+    // Initialize Yuka Vehicle
+    useEffect(() => {
+        const vehicle = new Vehicle();
+        vehicle.position.set(data.position.x, data.position.y, data.position.z);
+        vehicle.maxSpeed = ENEMY_SPEED;
+        vehicle.mass = 1;
+
+        // Behavior 1: Arrive at Player (smart pursuit)
+        const arriveBehavior = new ArriveBehavior(aiManager.getPlayerEntity().position, 2.5, 0.5);
+        vehicle.steering.add(arriveBehavior);
+
+        // Register to Manager
+        aiManager.registerEnemy(vehicle);
+        vehicleRef.current = vehicle;
+
+        return () => {
+            aiManager.unregisterEnemy(vehicle);
+        };
+    }, []);
 
     useFrame((state, delta) => {
-        if (!bodyRef.current || !headRef.current) return;
+        if (!bodyRef.current || !headRef.current || !vehicleRef.current) return;
         // Respect pause state
         if (isPaused) return;
 
-        const playerPos = gameRegistry.getPlayerPosition();
-        if (!playerPos) return;
+        // 1. Update AI World
+        // Note: Usually manager updates all, but we need to sync visuals here.
+        // aiManager.update(delta) is called globally? No, we should call it once in Scene.
+        // But for component encapsulation, let's assume Scene calls it or we do it here?
+        // Better: Scene handles ONE update loop for AI.
+        // Refactoring: We need an AIUpdater component in Scene.
+        // For now, let's just cheat and let the vehicle calculate its own steering force here if we haven't set up a global loop.
+        // Actually, Yuka emphasizes a Manager. Let's make sure Scene calls aiManager.update().
 
-        const currentPos = bodyRef.current.position;
-        const dist = currentPos.distanceTo(playerPos);
+        // Sync Visuals with AI
+        const vPos = vehicleRef.current.position;
+        // const vRot = vehicleRef.current.rotation; // Quaternion - Unused for now
 
-        if (dist < CHASE_DISTANCE) {
-            // Chase Logic
-            const direction = playerPos.clone().sub(currentPos).normalize();
+        bodyRef.current.position.set(vPos.x, vPos.y, vPos.z);
 
-            // Move towards player
-            if (dist > 5) {
-                // Check collision with other enemies (Basic Flocking/Avoidance)
-                let avoidForce = new Vector3(0, 0, 0);
-                const others = gameRegistry.getEnemies();
-                for (const other of others) {
-                    if (other.id !== data.id) {
-                        const d = currentPos.distanceTo(other.ref.position);
-                        if (d < 3) {
-                            const push = currentPos.clone().sub(other.ref.position).normalize();
-                            avoidForce.add(push.multiplyScalar(2.0));
-                        }
-                    }
-                }
+        // --- Collision Avoidance (Player) ---
+        // If too close to player, push back (Hard Collision)
+        const pPos = gameRegistry.getPlayerPosition();
+        if (pPos) {
+            // Manual Distance Check (Yuka Vec3 to Three Vec3)
+            const dx = vPos.x - pPos.x;
+            const dy = vPos.y - pPos.y; // Should be negligible
+            const dz = vPos.z - pPos.z;
+            const distSq = dx * dx + dy * dy + dz * dz;
 
-                const moveDir = direction.add(avoidForce).normalize();
-                bodyRef.current.position.add(moveDir.multiplyScalar(ENEMY_SPEED * delta));
+            if (distSq < 9.0) { // 3.0^2 = 9
+                // Push enemy back
+                const length = Math.sqrt(distSq);
+                const pushX = (dx / length) * (10 * delta);
+                const pushZ = (dz / length) * (10 * delta);
+
+                vehicleRef.current.position.x += pushX;
+                vehicleRef.current.position.z += pushZ;
             }
+        }
 
-            // Rotate Body to face player
-            bodyRef.current.lookAt(playerPos.x, currentPos.y, playerPos.z);
+        // --- Collision Avoidance (Other Enemies) ---
+        // Prevent stacking
+        const others = gameRegistry.getEnemies();
+        for (const other of others) {
+            if (other.id !== data.id) {
+                const oPos = other.ref.position;
+                const dx = vPos.x - oPos.x;
+                const dz = vPos.z - oPos.z;
+                const distSq = dx * dx + dz * dz;
 
-            // Rotate Head to face player
+                if (distSq < 6.25) { // 2.5^2 = 6.25
+                    const length = Math.sqrt(distSq);
+                    const pushX = (dx / length) * (4 * delta);
+                    const pushZ = (dz / length) * (4 * delta);
+
+                    vehicleRef.current.position.x += pushX;
+                    vehicleRef.current.position.z += pushZ;
+                }
+            }
+        }
+
+        // Rotate body to face velocity (movement direction)
+        const velocity = vehicleRef.current.velocity;
+        if (velocity.squaredLength() > 0.1) {
+            const targetRotation = Math.atan2(velocity.x, velocity.z);
+            bodyRef.current.rotation.y = targetRotation;
+        }
+
+        // --- Combat Logic (Aiming) ---
+        const playerPos = gameRegistry.getPlayerPosition();
+        if (playerPos) {
+            const currentPos = bodyRef.current.position;
+            const dist = currentPos.distanceTo(playerPos);
+
+            // Head always looks at player
             headRef.current.lookAt(playerPos.x, headRef.current.position.y, playerPos.z);
 
-            // Shoot Logic - Improved accuracy with less random spread
+            // Shoot if close enough
             if (dist < SHOOT_DISTANCE && state.clock.elapsedTime - lastShootTime > SHOOT_COOLDOWN) {
-                // Smaller spread = more accurate
-                const spread = (Math.random() - 0.5) * 0.1;
-                const fireDir = headRef.current.rotation.clone();
-                fireDir.y += spread;
+                // Shoot a bit randomized
+                const spread = (Math.random() - 0.5) * 0.2;
+                // const fireDir = headRef.current.rotation.clone(); // Unused
+                // Manual Yuka->Three Euler conversion fix if needed, but lookAt works on Group (Threejs)
+                // fireDir is Three.Euler
+
+                // Add Y spread
+                const euler = new Euler().copy(headRef.current.rotation);
+                euler.y += spread;
 
                 addLaser(
-                    headRef.current.position.clone().add(new Vector3(0, 0, 1).applyEuler(headRef.current.rotation)).add(bodyRef.current.position),
-                    fireDir,
+                    headRef.current.position.clone().add(new ThreeVector3(0, 0, 1).applyEuler(headRef.current.rotation)).add(bodyRef.current.position),
+                    euler,
                     'enemy'
                 );
                 setLastShootTime(state.clock.elapsedTime);
             }
-
-            // Note: We do NOT sync back to store position anymore.
         }
     });
 

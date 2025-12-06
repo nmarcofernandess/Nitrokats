@@ -32,7 +32,7 @@ interface EnemyData {
 interface PowerUpData {
     id: string;
     position: Vector3;
-    type: 'spread' | 'rapid';
+    type: 'spread' | 'health';
 }
 
 interface GameState {
@@ -75,10 +75,12 @@ interface GameState {
     updateEnemy: (id: string, position: Vector3, rotation: number) => void;
 
     // Weapon State
-    weaponType: 'normal' | 'spread' | 'rapid';
+    // Weapon State
+    weaponType: 'default' | 'spread';
+    setWeaponType: (type: 'default' | 'spread') => void;
     weaponTimer: number;
     spawnPowerUp: (position: Vector3) => void;
-    collectPowerUp: (id: string, type: 'spread' | 'rapid') => void;
+    collectPowerUp: (id: string, type: 'spread' | 'health') => void;
 }
 
 export const useGameStore = create<GameState>((set) => ({
@@ -96,7 +98,8 @@ export const useGameStore = create<GameState>((set) => ({
     gameOver: false,
     gameState: 'menu',
     isPaused: false,
-    weaponType: 'normal',
+    weaponType: 'default',
+    setWeaponType: (type) => set({ weaponType: type }),
     weaponTimer: 0,
     addLaser: (position, rotation, source) =>
         set((state) => ({
@@ -193,14 +196,22 @@ export const useGameStore = create<GameState>((set) => ({
         // 30% chance to spawn drop
         if (Math.random() > 0.3) return {};
 
-        const type = Math.random() > 0.5 ? 'spread' : 'rapid';
+        const type = Math.random() > 0.5 ? 'spread' : 'health';
         return {
             powerUps: [...state.powerUps, { id: uuidv4(), position, type }]
         };
     }),
-    collectPowerUp: (id, type) => set((state) => ({
-        powerUps: state.powerUps.filter(p => p.id !== id),
-        weaponType: type,
-        weaponTimer: 10 // 10 seconds of powerup
-    })),
+    collectPowerUp: (id, type) => set((state) => {
+        if (type === 'health') {
+            return {
+                powerUps: state.powerUps.filter(p => p.id !== id),
+                health: Math.min(100, state.health + 30)
+            };
+        }
+        return {
+            powerUps: state.powerUps.filter(p => p.id !== id),
+            weaponType: 'spread', // Forced because only spread is available as weapon
+            weaponTimer: 10
+        };
+    }),
 }));

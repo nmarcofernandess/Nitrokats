@@ -9,9 +9,20 @@ import { Arena } from './World/Arena';
 import { EnemyManager } from './Entities/EnemyTank';
 import { useGameStore } from './store';
 import { PowerUp } from './Entities/PowerUp';
+import { useFrame } from '@react-three/fiber';
+import { aiManager } from './Utils/AIManager';
 
 export const Scene = () => {
     const powerUps = useGameStore((state) => state.powerUps);
+
+    // Drive AI Simulation
+    // System Loop Component
+    const GameSystems = () => {
+        useFrame((_, delta) => {
+            aiManager.update(delta);
+        });
+        return null;
+    };
 
     // Pass gameState to components if needed, or use it for scene logic
     // Currently UI handles menu/gameover overlay.
@@ -36,6 +47,7 @@ export const Scene = () => {
             <directionalLight position={[-10, 20, 10]} intensity={0.5} castShadow />
 
             {/* World */}
+            <GameSystems />
             <Arena />
             <CatTank />
             <LaserManager />

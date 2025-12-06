@@ -29,7 +29,8 @@ class AudioController {
 
     // --- SFX ---
 
-    playShoot = () => {
+    // Helper for simple tones
+    private playTone = (frequency: number, type: OscillatorType, duration: number, delay: number = 0, volume: number = 0.5) => {
         if (!this.ctx || !this.masterGain) return;
         this.resume();
 
@@ -39,16 +40,41 @@ class AudioController {
         osc.connect(gain);
         gain.connect(this.masterGain);
 
-        // Retro Pew: Sawtooth wave, pitch drop
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(880, this.ctx.currentTime); // Start High
-        osc.frequency.exponentialRampToValueAtTime(110, this.ctx.currentTime + 0.15); // Drop Fast
+        osc.type = type;
+        osc.frequency.setValueAtTime(frequency, this.ctx.currentTime + delay);
 
-        gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(volume, this.ctx.currentTime + delay);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + delay + duration);
 
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.15);
+        osc.start(this.ctx.currentTime + delay);
+        osc.stop(this.ctx.currentTime + delay + duration);
+    };
+
+    playShoot = () => {
+        // Original implementation:
+        // if (!this.ctx || !this.masterGain) return;
+        // this.resume();
+
+        // const osc = this.ctx.createOscillator();
+        // const gain = this.ctx.createGain();
+
+        // osc.connect(gain);
+        // gain.connect(this.masterGain);
+
+        // // Retro Pew: Sawtooth wave, pitch drop
+        // osc.type = 'sawtooth';
+        // osc.frequency.setValueAtTime(880, this.ctx.currentTime); // Start High
+        // osc.frequency.exponentialRampToValueAtTime(110, this.ctx.currentTime + 0.15); // Drop Fast
+
+        // gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
+        // gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+
+        // osc.start();
+        // osc.stop(this.ctx.currentTime + 0.15);
+
+        // New simplified implementation using playTone
+        this.playTone(440, 'square', 0.1);
+        this.playTone(220, 'sawtooth', 0.1, 0.05);
     };
 
     playExplosion = () => {
@@ -104,6 +130,11 @@ class AudioController {
 
         osc.start();
         osc.stop(this.ctx.currentTime + 0.1);
+    };
+
+    playPowerUp = () => {
+        this.playTone(660, 'sine', 0.3);
+        this.playTone(880, 'sine', 0.3, 0.1);
     };
 
     // --- MUSIC (Simple Loop) ---
