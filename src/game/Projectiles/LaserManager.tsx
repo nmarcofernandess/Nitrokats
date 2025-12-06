@@ -44,7 +44,8 @@ const Laser = ({ id, position, rotation, source }: { id: string; position: Vecto
 
         // Check collision with targets
         for (const target of targets) {
-            if (ref.current.position.distanceTo(target.position) < 1) {
+            // Use 2D collision to ignore height differences (laser might be higher than block)
+            if (checkCircleCollision(ref.current.position, 0.5, target.position, 1.0)) {
                 removeTarget(target.id);
                 removeLaser(id);
                 addParticle(target.position, '#ff0000', 10);
