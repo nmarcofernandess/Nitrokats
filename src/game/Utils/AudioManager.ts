@@ -30,7 +30,7 @@ class AudioController {
     // --- SFX ---
 
     // Helper for simple tones
-    private playTone = (frequency: number, type: OscillatorType, duration: number, delay: number = 0, volume: number = 0.5) => {
+    public playTone = (frequency: number, type: OscillatorType, duration: number, delay: number = 0, volume: number = 0.5) => {
         if (!this.ctx || !this.masterGain) return;
         this.resume();
 

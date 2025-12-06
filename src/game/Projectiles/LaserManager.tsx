@@ -85,9 +85,9 @@ const Laser = ({ id, position, rotation, source }: { id: string; position: Vecto
         <group ref={ref} position={position} rotation={rotation}>
             <mesh rotation={[Math.PI / 2, 0, 0]}>
                 <cylinderGeometry args={[0.05, 0.05, 1]} />
-                <meshStandardMaterial color="#ff00ff" emissive="#ff00ff" emissiveIntensity={10} toneMapped={false} />
+                <meshStandardMaterial color="#ff00ff" emissive="#ff00ff" emissiveIntensity={5} toneMapped={false} />
             </mesh>
-            <pointLight color="#ff00ff" intensity={2} distance={5} decay={2} />
+            {/* Removed PointLight for performance */}
         </group>
     );
 };

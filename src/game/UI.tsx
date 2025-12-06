@@ -21,12 +21,20 @@ export const UI = () => {
                 <h1 className="text-8xl font-black text-cyan-400 mb-2 neon-text tracking-tight">CYBERCAT</h1>
                 <h2 className="text-4xl font-bold text-fuchsia-500 mb-16 neon-text">ARENA SURVIVOR</h2>
 
-                <button
-                    onClick={() => { audioManager.startMusic(); startGame(); }}
-                    className="px-20 py-6 bg-cyan-500 text-black font-black text-4xl hover:bg-cyan-400 hover:scale-110 transition-all cursor-pointer border-4 border-cyan-300 shadow-xl shadow-cyan-500/50"
-                >
-                    ▶ START
-                </button>
+                <div className="flex space-x-4">
+                    <button
+                        className="bg-cyan-500 hover:bg-cyan-400 text-black px-8 py-3 rounded text-xl font-bold uppercase tracking-widest neon-text"
+                        onClick={() => { audioManager.startMusic(); startGame('classic'); }}
+                    >
+                        Play Classic
+                    </button>
+                    <button
+                        className="bg-green-600 hover:bg-green-500 text-black px-8 py-3 rounded text-xl font-bold uppercase tracking-widest neon-text"
+                        onClick={() => { audioManager.startMusic(); startGame('zombie'); }}
+                    >
+                        Play Zombie
+                    </button>
+                </div>
 
                 <div className="mt-12 text-gray-400 text-center text-lg">
                     <p className="mb-2">WASD to Move • Mouse to Aim & Shoot</p>

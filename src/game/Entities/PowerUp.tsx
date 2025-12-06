@@ -21,10 +21,20 @@ export const PowerUp = ({ id, position, type }: { id: string; position: Vector3;
         const playerPos = gameRegistry.getPlayerPosition();
         if (playerPos && ref.current.position.distanceTo(playerPos) < 2) {
             collectPowerUp(id, type);
+            // Play Sound immediately
+            import('../Utils/AudioManager').then(({ audioManager }) => {
+                if (type === 'health') {
+                    audioManager.playTone(300, 'sine', 0.1);
+                    audioManager.playTone(400, 'sine', 0.1, 0.1);
+                    audioManager.playTone(500, 'sine', 0.2, 0.2); // Rising happy tone
+                } else {
+                    audioManager.playPowerUp();
+                }
+            });
         }
     });
 
-    const color = type === 'spread' ? '#ffff00' : '#00ffff'; // Yellow for Spread, Cyan for Rapid
+    const color = type === 'spread' ? '#ffff00' : '#00ff00'; // Yellow for Spread, Green for Health
 
     return (
         <group ref={ref} position={position}>

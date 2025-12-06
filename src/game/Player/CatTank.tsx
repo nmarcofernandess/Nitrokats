@@ -159,6 +159,11 @@ export const CatTank = () => {
             }
 
             if (canMove) {
+                // Apply Arena Boundaries (Arena Size 60, so -30 to 30. Tank radius approx 1.5. Clamp to -28 to 28)
+                const BOUNDARY = 28;
+                nextPos.x = Math.max(-BOUNDARY, Math.min(BOUNDARY, nextPos.x));
+                nextPos.z = Math.max(-BOUNDARY, Math.min(BOUNDARY, nextPos.z));
+
                 bodyRef.current.position.copy(nextPos);
             }
         }
@@ -181,7 +186,7 @@ export const CatTank = () => {
         // Let's just heal a tiny bit every frame if health < 100, 
         // but maybe that's too OP.
         // Let's just do: Heal 5 per second always.
-        heal(5 * delta);
+        // heal(5 * delta); // REMOVED DEBUG HEAL
 
         // --- Head Aiming ---
         // Raycast from camera to floor plane to get mouse world position

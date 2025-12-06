@@ -6,7 +6,7 @@ import { LaserManager } from './Projectiles/LaserManager';
 import { TargetManager } from './World/TargetManager';
 import { VFXManager } from './World/VFXManager';
 import { Arena } from './World/Arena';
-import { EnemyManager } from './Entities/EnemyTank';
+import { EnemyManager } from './Entities/EnemyManager';
 import { useGameStore } from './store';
 import { PowerUp } from './Entities/PowerUp';
 import { useFrame } from '@react-three/fiber';

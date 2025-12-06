@@ -64,8 +64,9 @@ interface GameState {
 
     // Game Flow
     gameState: 'menu' | 'playing' | 'paused' | 'gameover';
+    gameMode: 'classic' | 'zombie';
     isPaused: boolean;
-    startGame: () => void;
+    startGame: (mode: 'classic' | 'zombie') => void;
     restartGame: () => void;
     togglePause: () => void;
     goToMenu: () => void;
@@ -97,6 +98,7 @@ export const useGameStore = create<GameState>((set) => ({
     health: 100,
     gameOver: false,
     gameState: 'menu',
+    gameMode: 'classic',
     isPaused: false,
     weaponType: 'default',
     setWeaponType: (type) => set({ weaponType: type }),
@@ -154,19 +156,20 @@ export const useGameStore = create<GameState>((set) => ({
         };
     }),
     heal: (amount) => set((state) => ({ health: Math.min(100, state.health + amount) })),
-    startGame: () => set({ gameState: 'playing', isPaused: false, score: 0, kills: 0, wave: 1, health: 100, gameOver: false, enemies: [], lasers: [] }),
-    restartGame: () => set({
+    startGame: (mode) => set({ gameState: 'playing', gameMode: mode, isPaused: false, score: 0, kills: 0, wave: 1, health: 100, gameOver: false, enemies: [], lasers: [] }),
+    restartGame: () => set((state) => ({
         score: 0,
         kills: 0,
         wave: 1,
         health: 100,
         gameOver: false,
         gameState: 'playing',
+        gameMode: state.gameMode, // Keep current mode
         isPaused: false,
         lasers: [],
         particles: [],
         enemies: []
-    }),
+    })),
     togglePause: () => set((state) => ({
         isPaused: !state.isPaused,
         gameState: state.isPaused ? 'playing' : 'paused'
