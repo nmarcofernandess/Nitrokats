@@ -109,11 +109,8 @@ export const CatTank = () => {
         let moveVec = new Vector3();
 
         if (gameMode === 'zombie') {
-            // --- ZOMBIE MODE: TWIN STICK SHOOTER / FPS ---
+            // --- ZOMBIE MODE: TWIN STICK SHOOTER / FPS (RELATIVE MOVEMENT) ---
             // 1. ROTATE BODY TO MOUSE
-            // We need the mouse aim point first. 
-            // Raycast logic is currently below, let's hoist it up or reuse it.
-            // We'll duplicate the raycast quickly here for responsiveness (or restructure).
             const raycaster = new Raycaster();
             raycaster.setFromCamera(state.pointer, camera);
             const groundPlane = new Plane(new Vector3(0, 1, 0), 0);
@@ -131,8 +128,8 @@ export const CatTank = () => {
             let sideSpeed = 0;
             if (keys.w) forwardSpeed = MOVEMENT_SPEED;
             if (keys.s) forwardSpeed = -MOVEMENT_SPEED;
-            if (keys.a) sideSpeed = MOVEMENT_SPEED; // Left is positive X in local? Let's check.
-            if (keys.d) sideSpeed = -MOVEMENT_SPEED;
+            if (keys.a) sideSpeed = MOVEMENT_SPEED; // Left
+            if (keys.d) sideSpeed = -MOVEMENT_SPEED; // Right
 
             // Calculate Move Vector
             const rotation = bodyRef.current.rotation.y;
