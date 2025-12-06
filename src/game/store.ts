@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Vector3, Euler } from 'three';
 import { v4 as uuidv4 } from 'uuid';
+import { GameBalance } from './Utils/GameBalance';
 
 interface LaserData {
     id: string;
@@ -32,7 +33,7 @@ interface EnemyData {
 interface PowerUpData {
     id: string;
     position: Vector3;
-    type: 'spread' | 'health';
+    type: 'spread'; // Always spread for now
 }
 
 interface GameState {
@@ -79,9 +80,10 @@ interface GameState {
     // Weapon State
     weaponType: 'default' | 'spread';
     setWeaponType: (type: 'default' | 'spread') => void;
-    weaponTimer: number;
+    weaponAmmo: number;
+    decrementAmmo: () => void;
     spawnPowerUp: (position: Vector3) => void;
-    collectPowerUp: (id: string, type: 'spread' | 'health') => void;
+    collectPowerUp: (id: string) => void;
 }
 
 export const useGameStore = create<GameState>((set) => ({
@@ -102,7 +104,14 @@ export const useGameStore = create<GameState>((set) => ({
     isPaused: false,
     weaponType: 'default',
     setWeaponType: (type) => set({ weaponType: type }),
-    weaponTimer: 0,
+    weaponAmmo: 0,
+    decrementAmmo: () => set((state) => {
+        const newAmmo = state.weaponAmmo - 1;
+        if (newAmmo <= 0) {
+            return { weaponAmmo: 0, weaponType: 'default' };
+        }
+        return { weaponAmmo: newAmmo };
+    }),
     addLaser: (position, rotation, source) =>
         set((state) => ({
             lasers: [...state.lasers, { id: uuidv4(), position, rotation, source }],
@@ -187,7 +196,12 @@ export const useGameStore = create<GameState>((set) => ({
         enemies: []
     }),
     addEnemy: (position) => set((state) => ({
-        enemies: [...state.enemies, { id: uuidv4(), position, rotation: 0, health: 30 }]
+        enemies: [...state.enemies, {
+            id: uuidv4(),
+            position,
+            rotation: 0,
+            health: GameBalance.getEnemyHealthForWave(state.wave)
+        }]
     })),
     removeEnemy: (id) => set((state) => ({
         enemies: state.enemies.filter(e => e.id !== id)
@@ -196,25 +210,19 @@ export const useGameStore = create<GameState>((set) => ({
         enemies: state.enemies.map(e => e.id === id ? { ...e, position, rotation } : e)
     })),
     spawnPowerUp: (position) => set((state) => {
-        // 30% chance to spawn drop
-        if (Math.random() > 0.3) return {};
+        // Deterministic: Every 5 kills spawn a powerup
+        // We check (kills) because this is called after incrementKills?
+        // Actually incrementKills updates state.kills.
+        // So if kills % 5 == 0, drop it.
+        if (state.kills === 0 || state.kills % 5 !== 0) return {};
 
-        const type = Math.random() > 0.5 ? 'spread' : 'health';
         return {
-            powerUps: [...state.powerUps, { id: uuidv4(), position, type }]
+            powerUps: [...state.powerUps, { id: uuidv4(), position, type: 'spread' }]
         };
     }),
-    collectPowerUp: (id, type) => set((state) => {
-        if (type === 'health') {
-            return {
-                powerUps: state.powerUps.filter(p => p.id !== id),
-                health: Math.min(100, state.health + 30)
-            };
-        }
-        return {
-            powerUps: state.powerUps.filter(p => p.id !== id),
-            weaponType: 'spread', // Forced because only spread is available as weapon
-            weaponTimer: 10
-        };
-    }),
+    collectPowerUp: (id) => set((state) => ({
+        powerUps: state.powerUps.filter(p => p.id !== id),
+        weaponType: 'spread',
+        weaponAmmo: 20 // 20 Shots
+    })),
 }));

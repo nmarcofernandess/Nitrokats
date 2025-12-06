@@ -5,6 +5,7 @@ import { useGameStore } from '../store';
 import { audioManager } from '../Utils/AudioManager';
 import { checkCircleCollision } from '../Utils/CollisionUtils';
 import { gameRegistry } from '../Utils/ObjectRegistry';
+import { GameBalance } from '../Utils/GameBalance';
 
 const LASER_SPEED = 20;
 const MAX_DISTANCE = 100;
@@ -23,8 +24,8 @@ const Laser = ({ id, position, rotation, source }: { id: string; position: Vecto
     const wave = useGameStore((state) => state.wave);
     const isPaused = useGameStore((state) => state.isPaused);
 
-    // Base damage is 10, increases by 20% per wave
-    const getEnemyDamage = () => Math.floor(10 * (1 + (wave - 1) * 0.2));
+    // Damage Logic using GameBalance
+    const getEnemyDamage = () => GameBalance.getDamageForWave(wave);
     const startPos = useRef(position.clone());
 
     useFrame((_, delta) => {

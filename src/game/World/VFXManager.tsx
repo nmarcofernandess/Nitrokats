@@ -26,9 +26,11 @@ export const VFXManager = () => {
         // Screen Shake Decay
         if (currentShake.current > 0) {
             const intensity = currentShake.current;
-            camera.position.x += (Math.random() - 0.5) * intensity;
-            camera.position.y += (Math.random() - 0.5) * intensity;
-            camera.position.z += (Math.random() - 0.5) * intensity;
+            const intensity = currentShake.current;
+            // camera.position.x += (Math.random() - 0.5) * intensity;
+            // camera.position.y += (Math.random() - 0.5) * intensity;
+            // camera.position.z += (Math.random() - 0.5) * intensity;
+            // Shake Disabled for Performance
 
             currentShake.current = MathUtils.lerp(currentShake.current, 0, delta * 10);
         }

@@ -8,10 +8,11 @@ import { aiManager } from '../Utils/AIManager';
 import { generateCatFaceTexture } from '../Utils/TextureGenerator';
 import { gameRegistry } from '../Utils/ObjectRegistry';
 import { audioManager } from '../Utils/AudioManager';
+import { GameBalance } from '../Utils/GameBalance';
 
 const ZOMBIE_SPEED = 5.0; // Fast
 const EXPLOSION_RANGE = 2.0;
-const EXPLOSION_DAMAGE = 20;
+// const EXPLOSION_DAMAGE = 20; // Replaced by GameBalance
 
 export const ZombieCat = ({ data }: { data: { id: string, position: any, rotation: number } }) => {
     const bodyRef = useRef<Group>(null);
@@ -22,6 +23,7 @@ export const ZombieCat = ({ data }: { data: { id: string, position: any, rotatio
     const removeEnemy = useGameStore((state) => state.removeEnemy);
     const addParticle = useGameStore((state) => state.addParticle);
     const isPaused = useGameStore((state) => state.isPaused);
+    const wave = useGameStore((state) => state.wave); // Need wave for damage calc
 
     // Textures
     const [catFace] = useState(() => generateCatFaceTexture('#2b4a2b', '#ff0000')); // Green/Red
@@ -106,7 +108,8 @@ export const ZombieCat = ({ data }: { data: { id: string, position: any, rotatio
             const dist = bodyRef.current.position.distanceTo(playerPos);
             if (dist < EXPLOSION_RANGE) {
                 // EXPLODE!
-                takeDamage(EXPLOSION_DAMAGE);
+                const damage = GameBalance.getDamageForWave(wave);
+                takeDamage(damage);
                 addParticle(bodyRef.current.position.clone(), '#00ff00', 30); // Green Slime Explosion
                 audioManager.playExplosion();
                 removeEnemy(data.id); // Die

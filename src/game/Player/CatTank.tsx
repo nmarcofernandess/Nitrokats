@@ -20,7 +20,7 @@ export const CatTank = () => {
     const cannonRef = useRef<Mesh>(null);
     const { camera } = useThree();
     const addLaser = useGameStore((state) => state.addLaser);
-    const triggerShake = useGameStore((state) => state.triggerShake);
+    // const triggerShake = useGameStore((state) => state.triggerShake);
 
     // Removed setPlayerPosition to avoid store spam
     const health = useGameStore((state) => state.health);
@@ -45,20 +45,9 @@ export const CatTank = () => {
 
     // We don't need enemies/targets from store for collision anymore, we use Registry
     const weaponType = useGameStore((state) => state.weaponType);
-    const setWeaponType = useGameStore((state) => state.setWeaponType);
+    const decrementAmmo = useGameStore((state) => state.decrementAmmo);
     const recoilRef = useRef(0);
     const lastFireTime = useRef(0);
-
-    // Power-Up Duration Timer
-    useEffect(() => {
-        if (weaponType !== 'default') {
-            const timer = setTimeout(() => {
-                setWeaponType('default');
-                audioManager.playPowerUp(); // Play sound to indicate end? Or maybe a power down sound. Re-using for now.
-            }, 10000); // 10 Seconds
-            return () => clearTimeout(timer);
-        }
-    }, [weaponType, setWeaponType]);
 
     // Weapon Stats
     const getFireRate = () => 0.2; // Default fire rate for everyone now
@@ -220,11 +209,14 @@ export const CatTank = () => {
                 if (weaponType === 'spread') {
                     fire(0.2);
                     fire(-0.2);
+                    decrementAmmo(); // Decrement only if spread active? Or always?
+                    // User said: "Every 20 shots, the weapon ends."
+                    // If spread counts as 1 "shot action", then decrement once.
                 }
 
                 // Trigger Recoil
                 recoilRef.current = 0.5;
-                triggerShake(0.5); // Shake screen
+                // triggerShake(0.5); // REMOVED Screen Shake for performance
                 audioManager.playShoot(); // SFX
                 lastFireTime.current = state.clock.elapsedTime;
             }

@@ -3,6 +3,7 @@ import { Vector3 as ThreeVector3 } from 'three';
 import { useGameStore } from '../store';
 import { EnemyTank } from './EnemyTank';
 import { ZombieCat } from './ZombieCat';
+import { GameBalance } from '../Utils/GameBalance';
 
 export const EnemyManager = () => {
     const enemies = useGameStore((state) => state.enemies);
@@ -25,7 +26,7 @@ export const EnemyManager = () => {
     // Spawn Logic
     useEffect(() => {
         if (gameState === 'playing' && enemies.length === 0) {
-            const count = 2 + wave;
+            const count = GameBalance.getKillsNeededForWave(wave);
             for (let i = 0; i < count; i++) {
                 const angle = Math.random() * Math.PI * 2;
                 const radius = 25 + Math.random() * 10; // Slightly further out

@@ -5,7 +5,7 @@ import { Edges } from '@react-three/drei';
 import { useGameStore } from '../store';
 import { gameRegistry } from '../Utils/ObjectRegistry';
 
-export const PowerUp = ({ id, position, type }: { id: string; position: Vector3; type: 'spread' | 'health' }) => {
+export const PowerUp = ({ id, position }: { id: string; position: Vector3 }) => {
     const ref = useRef<Group>(null);
     // const playerPosition = useGameStore((state) => state.playerPosition); // Deprecated in favor of Registry
     const collectPowerUp = useGameStore((state) => state.collectPowerUp);
@@ -20,21 +20,15 @@ export const PowerUp = ({ id, position, type }: { id: string; position: Vector3;
         // Check Collection via Registry
         const playerPos = gameRegistry.getPlayerPosition();
         if (playerPos && ref.current.position.distanceTo(playerPos) < 2) {
-            collectPowerUp(id, type);
+            collectPowerUp(id);
             // Play Sound immediately
             import('../Utils/AudioManager').then(({ audioManager }) => {
-                if (type === 'health') {
-                    audioManager.playTone(300, 'sine', 0.1);
-                    audioManager.playTone(400, 'sine', 0.1, 0.1);
-                    audioManager.playTone(500, 'sine', 0.2, 0.2); // Rising happy tone
-                } else {
-                    audioManager.playPowerUp();
-                }
+                audioManager.playPowerUp();
             });
         }
     });
 
-    const color = type === 'spread' ? '#ffff00' : '#00ff00'; // Yellow for Spread, Green for Health
+    const color = '#ffff00'; // Always Yellow (Weapon Upgrade)
 
     return (
         <group ref={ref} position={position}>
