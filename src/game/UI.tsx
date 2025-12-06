@@ -7,6 +7,8 @@ export const UI = () => {
     const wave = useGameStore((state) => state.wave);
     const health = useGameStore((state) => state.health);
     const gameOver = useGameStore((state) => state.gameOver);
+    const showWaveAnnouncement = useGameStore((state) => state.showWaveAnnouncement);
+    const weaponAmmo = useGameStore((state) => state.weaponAmmo);
     const gameState = useGameStore((state) => state.gameState);
     const restartGame = useGameStore((state) => state.restartGame);
     const startGame = useGameStore((state) => state.startGame);
@@ -15,6 +17,18 @@ export const UI = () => {
     const goToMenu = useGameStore((state) => state.goToMenu);
 
     // MAIN MENU - Fullscreen overlay
+
+    // Wave Announcement Overlay
+    if (showWaveAnnouncement && gameState === 'playing') {
+        return (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-40">
+                <h1 className="text-9xl font-black text-yellow-400 neon-text animate-pulse drop-shadow-[0_0_50px_rgba(255,255,0,0.8)]">
+                    WAVE {wave}
+                </h1>
+            </div>
+        );
+    }
+
     if (gameState === 'menu') {
         return (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 z-50">

@@ -13,35 +13,41 @@ export const EnemyManager = () => {
     const gameState = useGameStore((state) => state.gameState);
     const gameMode = useGameStore((state) => state.gameMode);
 
-    const [isWaitingNextWave, setIsWaitingNextWave] = useState(false);
     const spawnedWave = useRef(0);
+    const showWaveAnnouncement = useGameStore((state) => state.showWaveAnnouncement);
+    const setShowWaveAnnouncement = useGameStore((state) => state.setShowWaveAnnouncement);
 
-    // Reset spawn tracker on game restart (or when wave goes back to 1)
+    // Reset spawn tracker on unexpected wave mismatch (safety fallback)
     useEffect(() => {
         if (wave === 1 && spawnedWave.current > 1) {
             spawnedWave.current = 0;
-            setIsWaitingNextWave(false);
         }
     }, [wave]);
 
-    // Wave Completion Logic
+    // 1. Handle Announcement Timer
     useEffect(() => {
-        if (gameState === 'playing' && enemies.length === 0 && spawnedWave.current === wave && !isWaitingNextWave) {
-            setIsWaitingNextWave(true);
-            const timeout = setTimeout(() => {
-                nextWave();
-                setIsWaitingNextWave(false);
-            }, 1000); // 1-second delay between waves
-            return () => clearTimeout(timeout);
+        if (showWaveAnnouncement) {
+            const timer = setTimeout(() => {
+                setShowWaveAnnouncement(false);
+            }, 3000); // Show "WAVE X" for 3 seconds
+            return () => clearTimeout(timer);
         }
-    }, [enemies.length, gameState, wave, isWaitingNextWave, nextWave]);
+    }, [showWaveAnnouncement, setShowWaveAnnouncement]);
 
-    // Spawn Logic
+    // 2. Wave Completion Logic (Triggers Next Wave & Announcement)
     useEffect(() => {
-        if (gameState === 'playing' && spawnedWave.current < wave) {
-            // Spawn for new wave
+        // Check if all enemies for the current wave are defeated and no announcement is active
+        if (gameState === 'playing' && enemies.length === 0 && spawnedWave.current === wave && !showWaveAnnouncement) {
+            nextWave(); // Increment wave number
+            setShowWaveAnnouncement(true); // Trigger wave announcement
+        }
+    }, [enemies.length, gameState, wave, nextWave, setShowWaveAnnouncement, showWaveAnnouncement]);
+
+    // 3. Spawn Logic (Only when NOT announcing)
+    useEffect(() => {
+        // Spawn enemies if game is playing, no announcement is active, and current wave needs spawning
+        if (gameState === 'playing' && !showWaveAnnouncement && spawnedWave.current < wave) {
             const count = GameBalance.getKillsNeededForWave(wave);
-            // console.log(`Spawning Wave ${wave}: ${count} enemies`);
 
             for (let i = 0; i < count; i++) {
                 const angle = Math.random() * Math.PI * 2;
@@ -50,9 +56,9 @@ export const EnemyManager = () => {
                 const z = Math.cos(angle) * radius;
                 addEnemy(new ThreeVector3(x, 0, z));
             }
-            spawnedWave.current = wave;
+            spawnedWave.current = wave; // Mark current wave as spawned
         }
-    }, [wave, gameState, addEnemy]);
+    }, [wave, gameState, addEnemy, showWaveAnnouncement]);
 
     return (
         <>

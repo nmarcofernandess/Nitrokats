@@ -76,6 +76,10 @@ interface GameState {
     removeEnemy: (id: string) => void;
     updateEnemy: (id: string, position: Vector3, rotation: number) => void;
 
+    // UI State
+    showWaveAnnouncement: boolean;
+    setShowWaveAnnouncement: (show: boolean) => void;
+
     // Weapon State
     // Weapon State
     weaponType: 'default' | 'spread';
@@ -102,6 +106,8 @@ export const useGameStore = create<GameState>((set) => ({
     gameState: 'menu',
     gameMode: 'classic',
     isPaused: false,
+    showWaveAnnouncement: false,
+    setShowWaveAnnouncement: (show) => set({ showWaveAnnouncement: show }),
     weaponType: 'default',
     setWeaponType: (type) => set({ weaponType: type }),
     weaponAmmo: 0,
@@ -165,7 +171,19 @@ export const useGameStore = create<GameState>((set) => ({
         };
     }),
     heal: (amount) => set((state) => ({ health: Math.min(100, state.health + amount) })),
-    startGame: (mode) => set({ gameState: 'playing', gameMode: mode, isPaused: false, score: 0, kills: 0, wave: 1, health: 100, gameOver: false, enemies: [], lasers: [] }),
+    startGame: (mode) => set({
+        gameState: 'playing',
+        gameMode: mode,
+        isPaused: false,
+        score: 0,
+        kills: 0,
+        wave: 1,
+        health: 100,
+        gameOver: false,
+        enemies: [],
+        lasers: [],
+        showWaveAnnouncement: true // Start with announcement
+    }),
     restartGame: () => set((state) => ({
         score: 0,
         kills: 0,
