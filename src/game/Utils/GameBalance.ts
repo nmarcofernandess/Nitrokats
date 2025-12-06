@@ -10,10 +10,9 @@ export const GameBalance = {
     },
 
     // Wave Progression
-    // How many kills needed to clear a wave?
-    // Let's say: 3 kills wave 1, then +2 per wave
+    // Wave 1: 10 enemies, Wave 2: 20, etc.
     getKillsNeededForWave: (wave: number) => {
-        return 3 + (wave - 1) * 2;
+        return wave * 10;
     },
 
     // Enemy Toughness
