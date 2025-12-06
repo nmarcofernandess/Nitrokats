@@ -104,30 +104,63 @@ export const CatTank = () => {
     useFrame((state, delta) => {
         if (!bodyRef.current || !headRef.current || gameOver || gameState !== 'playing') return;
 
-        // --- Tank/Car Movement Logic ---
-        // W/S = Move Forward/Backward relative to rotation
-        // A/D = Rotate Left/Right
+        // --- MOVEMENT LOGIC (Split by Mode) ---
 
-        // Rotation
-        if (keys.a) bodyRef.current.rotation.y += ROTATION_SPEED * delta;
-        if (keys.d) bodyRef.current.rotation.y -= ROTATION_SPEED * delta;
+        let moveVec = new Vector3();
 
-        // Forward/Backward Movement
-        let speed = 0;
-        if (keys.w) speed = MOVEMENT_SPEED;
-        if (keys.s) speed = -MOVEMENT_SPEED;
+        if (gameMode === 'zombie') {
+            // --- ZOMBIE MODE: TWIN STICK SHOOTER / FPS ---
+            // 1. ROTATE BODY TO MOUSE
+            // We need the mouse aim point first. 
+            // Raycast logic is currently below, let's hoist it up or reuse it.
+            // We'll duplicate the raycast quickly here for responsiveness (or restructure).
+            const raycaster = new Raycaster();
+            raycaster.setFromCamera(state.pointer, camera);
+            const groundPlane = new Plane(new Vector3(0, 1, 0), 0);
+            const targetPoint = new Vector3();
+            raycaster.ray.intersectPlane(groundPlane, targetPoint);
 
-        if (speed !== 0) {
-            const forward = new Vector3(0, 0, 1).applyAxisAngle(new Vector3(0, 1, 0), bodyRef.current.rotation.y);
-            // In Three.js, often -Z is forward, but check your model. 
-            // In our isometric setup, usually +Z is towards camera, -Z away.
-            // Let's assume standard math: 0 rotation = facing +Z? 
-            // Let's test standard forward vector application.
+            if (targetPoint) {
+                // Instant Face Mouse
+                const angle = Math.atan2(targetPoint.x - bodyRef.current.position.x, targetPoint.z - bodyRef.current.position.z);
+                bodyRef.current.rotation.y = angle;
+            }
 
-            // Correction: applyEuler with 0,0,1 might need checking model orientation.
-            // If model faces +Z by default:
-            const moveVec = forward.multiplyScalar(speed * delta);
+            // 2. MOVE (WASD Relative to Looking Direction, i.e., Strafe)
+            let forwardSpeed = 0;
+            let sideSpeed = 0;
+            if (keys.w) forwardSpeed = MOVEMENT_SPEED;
+            if (keys.s) forwardSpeed = -MOVEMENT_SPEED;
+            if (keys.a) sideSpeed = MOVEMENT_SPEED; // Left is positive X in local? Let's check.
+            if (keys.d) sideSpeed = -MOVEMENT_SPEED;
 
+            // Calculate Move Vector
+            const rotation = bodyRef.current.rotation.y;
+            const forward = new Vector3(0, 0, 1).applyAxisAngle(new Vector3(0, 1, 0), rotation);
+            const right = new Vector3(1, 0, 0).applyAxisAngle(new Vector3(0, 1, 0), rotation);
+
+            moveVec.add(forward.multiplyScalar(forwardSpeed * delta));
+            moveVec.add(right.multiplyScalar(sideSpeed * delta));
+
+        } else {
+            // --- CLASSIC MODE: TANK CONTROLS ---
+            // Rotation
+            if (keys.a) bodyRef.current.rotation.y += ROTATION_SPEED * delta;
+            if (keys.d) bodyRef.current.rotation.y -= ROTATION_SPEED * delta;
+
+            // Forward/Backward Movement
+            let speed = 0;
+            if (keys.w) speed = MOVEMENT_SPEED;
+            if (keys.s) speed = -MOVEMENT_SPEED;
+
+            if (speed !== 0) {
+                const forward = new Vector3(0, 0, 1).applyAxisAngle(new Vector3(0, 1, 0), bodyRef.current.rotation.y);
+                moveVec = forward.multiplyScalar(speed * delta);
+            }
+        }
+
+        // --- APPLY MOVEMENT ---
+        if (moveVec.lengthSq() > 0) {
             const nextPos = bodyRef.current.position.clone().add(moveVec);
 
             let canMove = true;
@@ -192,10 +225,17 @@ export const CatTank = () => {
 
         if (targetPoint) {
             setAimPos(targetPoint.clone());
-            const worldAngle = Math.atan2(targetPoint.x - bodyRef.current.position.x, targetPoint.z - bodyRef.current.position.z);
-            const bodyAngle = bodyRef.current.rotation.y;
+            // If Zombie, the whole body already faces mouse. Head should just be 0 relative.
+            // If Classic, Body can be independent, Head must aim at mouse.
 
-            headRef.current.rotation.y = worldAngle - bodyAngle;
+            if (gameMode === 'classic') {
+                const worldAngle = Math.atan2(targetPoint.x - bodyRef.current.position.x, targetPoint.z - bodyRef.current.position.z);
+                const bodyAngle = bodyRef.current.rotation.y;
+                headRef.current.rotation.y = worldAngle - bodyAngle;
+            } else {
+                // Zombie: Head fixed forward (Body aims)
+                headRef.current.rotation.y = 0;
+            }
 
             // Auto-fire Logic
             if (mouseDown && state.clock.elapsedTime - lastFireTime.current > getFireRate()) {
@@ -244,7 +284,7 @@ export const CatTank = () => {
 
         // --- Bipedal Animation (Zombie Mode Only) ---
         if (gameMode === 'zombie' && leftLegRef.current && rightLegRef.current) {
-            const isMoving = keys.w || keys.s;
+            const isMoving = keys.w || keys.s || keys.a || keys.d;
             if (isMoving) {
                 const time = state.clock.elapsedTime * 15;
                 leftLegRef.current.rotation.x = Math.sin(time) * 0.5;
@@ -340,133 +380,125 @@ export const CatTank = () => {
                             </mesh>
                         </mesh>
 
-                        {/* ARMS holding GUN */}
-                        <group position={[0.5, 0.2, 0.4]} rotation={[0, -0.2, 0]}>
-                            {/* Right Arm */}
-                            <mesh position={[0, 0, 0]} rotation={[0.5, 0, 0]}>
-                                <boxGeometry args={[0.2, 0.6, 0.2]} />
+                        {/* ARMS holding GUN (Two hands) */}
+                        <group position={[0, 0.3, 0.4]}>
+                            {/* Right Arm (Reaching forward) */}
+                            <mesh position={[0.4, 0, 0]} rotation={[1.2, -0.2, 0]}>
+                                <boxGeometry args={[0.15, 0.5, 0.15]} />
                                 <meshStandardMaterial color="#333" />
                             </mesh>
-                            {/* Minigun Visual */}
-                            <mesh position={[0.1, -0.3, 0.5]} rotation={[0, 0, 0]}>
-                                <boxGeometry args={[0.2, 0.2, 1.2]} />
-                                <meshStandardMaterial color="#666" />
-                            </mesh>
-                            {/* Muzzle Flash Point (Though cannonRef is on head for gameplay aim consistency, 
-                                 or we move cannonRef? User expects gun to shoot.
-                                 Currently head rotates to aim. Gun is on body.
-                                 Body rotates to WASD. This means gun won't aim at mouse IF body doesn't face mouse.
-                                 But in our logic: Body faces WASD/Keys. Head faces Mouse.
-                                 Tank: Turret rotates.
-                                 Soldier: Usually whole body rotates to aim? Or Waist?
-                                 
-                                 If I put Gun on Body, and Body moves with WASD, Gun points where you walk.
-                                 If you want to aim with mouse, Gun should be child of Head/Torso-Twist.
-                                 Current Logic: `headRef` rotates to mouse. 
-                                 Let's attach the GUN to the HEAD group for Zombie Mode so it aims?
-                                 Or make the Soldier ALWAYS face the mouse (Strafe logic).
-                                 
-                                 Current Tank Logic:
-                                 A/D rotates Body.
-                                 Mouse rotates Head.
-                                 
-                                 If visual is Soldier:
-                                 It looks weird if I walk North but aim East and my body faces North (Gun points North) but bullets come from Head (East).
-                                 
-                                 Solution:
-                                 Attach Gun to HeadRef? 
-                                 Yes. Imagine he holds the gun up to his eye/shoulder which rotates.
-                             */}
-                        </group>
-                    </group>
-                )}
-
-                {/* TANK HEAD / SOLDIER HEAD */}
-                {/* Visuals adjusted based on mode */}
-                <group ref={headRef} position={[0, gameMode === 'zombie' ? 0.6 : 0.8, 0]}>
-
-                    {gameMode === 'classic' ? (
-                        // CLASSIC TANK TURRET
-                        <group>
-                            {/* Head Base */}
-                            <mesh position={[0, -0.2, 0]}>
-                                <cylinderGeometry args={[0.6, 0.6, 0.2]} />
+                            {/* Left Arm (Reaching forward) */}
+                            <mesh position={[-0.4, 0, 0]} rotation={[1.2, 0.2, 0]}>
+                                <boxGeometry args={[0.15, 0.5, 0.15]} />
                                 <meshStandardMaterial color="#333" />
                             </mesh>
-                            {/* Cat Head Cube */}
-                            <mesh castShadow position={[0, 0.3, 0]}>
-                                <boxGeometry args={[1, 0.8, 0.9]} />
-                                <meshStandardMaterial attach="material-0" color="#1a1a2e" />
-                                <meshStandardMaterial attach="material-1" color="#1a1a2e" />
-                                <meshStandardMaterial attach="material-2" color="#1a1a2e" />
-                                <meshStandardMaterial attach="material-3" color="#1a1a2e" />
-                                <meshStandardMaterial attach="material-4" map={catFace} />
-                                <meshStandardMaterial attach="material-5" color="#1a1a2e" />
-                                <Edges color="#ff00ff" threshold={15} />
-                            </mesh>
-                            {/* Ears */}
-                            <mesh position={[-0.35, 0.8, 0]} rotation={[0, 0, 0.2]}>
-                                <coneGeometry args={[0.15, 0.4, 4]} />
-                                <meshStandardMaterial color="#1a1a2e" />
-                                <Edges color="#ff00ff" />
-                            </mesh>
-                            <mesh position={[0.35, 0.8, 0]} rotation={[0, 0, -0.2]}>
-                                <coneGeometry args={[0.15, 0.4, 4]} />
-                                <meshStandardMaterial color="#1a1a2e" />
-                                <Edges color="#ff00ff" />
-                            </mesh>
-                        </group>
-                    ) : (
-                        // ZOMBIE MODE HEAD + GUN (Attached to Head for Aiming)
-                        <group>
-                            {/* Smaller Head for Soldier */}
-                            <mesh castShadow position={[0, 0, 0]}>
-                                <boxGeometry args={[0.6, 0.5, 0.5]} />
-                                <meshStandardMaterial attach="material-0" color="#1a1a2e" />
-                                <meshStandardMaterial attach="material-1" color="#1a1a2e" />
-                                <meshStandardMaterial attach="material-2" color="#1a1a2e" />
-                                <meshStandardMaterial attach="material-3" color="#1a1a2e" />
-                                <meshStandardMaterial attach="material-4" map={catFace} />
-                                <meshStandardMaterial attach="material-5" color="#1a1a2e" />
-                            </mesh>
-                            {/* Ears */}
-                            <mesh position={[-0.2, 0.3, 0]} rotation={[0, 0, 0.2]}>
-                                <coneGeometry args={[0.1, 0.2, 4]} />
-                                <meshStandardMaterial color="#1a1a2e" />
-                            </mesh>
-                            <mesh position={[0.2, 0.3, 0]} rotation={[0, 0, -0.2]}>
-                                <coneGeometry args={[0.1, 0.2, 4]} />
-                                <meshStandardMaterial color="#1a1a2e" />
-                            </mesh>
 
-                            {/* MACHINE GUN (Attached to Head/Shoulder) */}
-                            <group position={[0.4, -0.2, 0.4]}>
-                                {/* Gun Body */}
-                                <mesh>
-                                    <boxGeometry args={[0.15, 0.2, 0.8]} />
-                                    <meshStandardMaterial color="#444" />
+                            {/* BIG GUN (Held by hands) */}
+                            <group position={[0, 0, 0.5]} rotation={[0, 0, 0]}>
+                                {/* Main Body */}
+                                <mesh position={[0, 0, 0]}>
+                                    <boxGeometry args={[0.3, 0.3, 1.0]} />
+                                    <meshStandardMaterial color="#222" />
                                 </mesh>
-                                {/* Barrels (Minigun style) */}
-                                <mesh position={[0, 0, 0.4]} rotation={[Math.PI / 2, 0, 0]}>
-                                    <cylinderGeometry args={[0.08, 0.08, 0.4]} />
-                                    <meshStandardMaterial color="#111" />
+                                {/* Barrels */}
+                                <mesh position={[0.08, 0, 0.6]} rotation={[Math.PI / 2, 0, 0]}>
+                                    <cylinderGeometry args={[0.05, 0.05, 0.5]} />
+                                    <meshStandardMaterial color="#555" />
+                                </mesh>
+                                <mesh position={[-0.08, 0, 0.6]} rotation={[Math.PI / 2, 0, 0]}>
+                                    <cylinderGeometry args={[0.05, 0.05, 0.5]} />
+                                    <meshStandardMaterial color="#555" />
+                                </mesh>
+                                {/* Ammo Box */}
+                                <mesh position={[0.2, 0, -0.2]}>
+                                    <boxGeometry args={[0.2, 0.4, 0.4]} />
+                                    <meshStandardMaterial color="#004400" />
                                 </mesh>
                             </group>
                         </group>
-                    )}
+                    </group>
+                    </group>
+                )}
 
-                    {/* Cannon/Eye Laser Emitter (Invisible Anchor) */}
-                    {/* Position changes based on mode to align with visuals */}
-                    <mesh
-                        ref={cannonRef}
-                        position={gameMode === 'zombie' ? [0.4, -0.2, 0.8] : [0.2, 0.4, 0.5]}
-                        rotation={[Math.PI / 2, 0, 0]}
-                    >
-                        <cylinderGeometry args={[0.02, 0.02, 0.2]} />
-                        <meshBasicMaterial visible={false} />
-                    </mesh>
-                </group>
+            {/* TANK HEAD / SOLDIER HEAD */}
+            {/* Visuals adjusted based on mode */}
+            <group ref={headRef} position={[0, gameMode === 'zombie' ? 0.7 : 0.8, 0]}>
+
+                {gameMode === 'classic' ? (
+                    // CLASSIC TANK TURRET
+                    <group>
+                        {/* Head Base */}
+                        <mesh position={[0, -0.2, 0]}>
+                            <cylinderGeometry args={[0.6, 0.6, 0.2]} />
+                            <meshStandardMaterial color="#333" />
+                        </mesh>
+                        {/* Cat Head Cube */}
+                        <mesh castShadow position={[0, 0.3, 0]}>
+                            <boxGeometry args={[1, 0.8, 0.9]} />
+                            <meshStandardMaterial attach="material-0" color="#1a1a2e" />
+                            <meshStandardMaterial attach="material-1" color="#1a1a2e" />
+                            <meshStandardMaterial attach="material-2" color="#1a1a2e" />
+                            <meshStandardMaterial attach="material-3" color="#1a1a2e" />
+                            <meshStandardMaterial attach="material-4" map={catFace} />
+                            <meshStandardMaterial attach="material-5" color="#1a1a2e" />
+                            <Edges color="#ff00ff" threshold={15} />
+                        </mesh>
+                        {/* Ears */}
+                        <mesh position={[-0.35, 0.8, 0]} rotation={[0, 0, 0.2]}>
+                            <coneGeometry args={[0.15, 0.4, 4]} />
+                            <meshStandardMaterial color="#1a1a2e" />
+                            <Edges color="#ff00ff" />
+                        </mesh>
+                        <mesh position={[0.35, 0.8, 0]} rotation={[0, 0, -0.2]}>
+                            <coneGeometry args={[0.15, 0.4, 4]} />
+                            <meshStandardMaterial color="#1a1a2e" />
+                            <Edges color="#ff00ff" />
+                        </mesh>
+                    </group>
+                ) : (
+                    // ZOMBIE MODE HEAD ONLY (Gun is on body now)
+                    <group>
+                        {/* Smaller Head for Soldier */}
+                        <mesh castShadow position={[0, 0, 0]}>
+                            <boxGeometry args={[0.6, 0.5, 0.5]} />
+                            <meshStandardMaterial attach="material-0" color="#1a1a2e" />
+                            <meshStandardMaterial attach="material-1" color="#1a1a2e" />
+                            <meshStandardMaterial attach="material-2" color="#1a1a2e" />
+                            <meshStandardMaterial attach="material-3" color="#1a1a2e" />
+                            <meshStandardMaterial attach="material-4" map={catFace} />
+                            <meshStandardMaterial attach="material-5" color="#1a1a2e" />
+                        </mesh>
+                        {/* Ears */}
+                        <mesh position={[-0.2, 0.3, 0]} rotation={[0, 0, 0.2]}>
+                            <coneGeometry args={[0.1, 0.2, 4]} />
+                            <meshStandardMaterial color="#1a1a2e" />
+                        </mesh>
+                        <mesh position={[0.2, 0.3, 0]} rotation={[0, 0, -0.2]}>
+                            <coneGeometry args={[0.1, 0.2, 4]} />
+                            <meshStandardMaterial color="#1a1a2e" />
+                        </mesh>
+                    </group>
+                )}
+
+                {/* Cannon Anchor (Invisible) */}
+                {/* In Zombie Mode, Gun is on body. But body rotates to mouse. So firing straight from body works? 
+                        The rotation logic ensures Body Y = Mouse Angle.
+                        So pure (0,0,1) + Body Pos should be correct.
+                        However, useFrame logic adds laser based on head rotation + body rotation.
+                        If Head Rotation is 0 (as set above), then it uses Body Rotation.
+                        So it should work perfectly.
+                        Position adjustment:
+                    */}
+                <mesh
+                    ref={cannonRef}
+                    position={gameMode === 'zombie' ? [0, -0.4, 1.2] : [0.2, 0.4, 0.5]}
+                    rotation={[Math.PI / 2, 0, 0]}
+                >
+                    <cylinderGeometry args={[0.02, 0.02, 0.2]} />
+                    <meshBasicMaterial visible={false} />
+                </mesh>
             </group>
+        </group >
         </>
     );
 };

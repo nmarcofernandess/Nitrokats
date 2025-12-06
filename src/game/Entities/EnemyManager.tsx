@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Vector3 as ThreeVector3 } from 'three';
 import { useGameStore } from '../store';
 import { EnemyTank } from './EnemyTank';
-import { ZombieCat } from './ZombieCat';
+import { ZombieRat } from './ZombieRat';
 import { GameBalance } from '../Utils/GameBalance';
 
 export const EnemyManager = () => {
@@ -65,7 +65,7 @@ export const EnemyManager = () => {
             {enemies.map(enemy => (
                 gameMode === 'classic'
                     ? <EnemyTank key={enemy.id} data={enemy} />
-                    : <ZombieCat key={enemy.id} data={enemy} />
+                    : <ZombieRat key={enemy.id} data={enemy} />
             ))}
         </>
     );
