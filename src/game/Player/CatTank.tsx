@@ -302,55 +302,92 @@ export const CatTank = () => {
 
             <group ref={bodyRef} position={[0, gameMode === 'zombie' ? 1.0 : 0.5, 0]}>
 
-                {/* --- CLASSIC TANK MODE --- */}
+                {/* --- CLASSIC TANK MODE (ARTILLERY CAT) --- */}
                 {gameMode === 'classic' && (
                     <group>
-                        {/* CHASSIS (The Box) */}
-                        <mesh castShadow receiveShadow position={[0, 0.25, 0]}>
-                            <boxGeometry args={[1.8, 0.8, 2.2]} />
-                            <meshStandardMaterial map={chassis} />
-                            <Edges color="#00ffff" threshold={15} />
+                        {/* --- CHASSIS GROUP --- */}
+                        <group position={[0, 0.3, 0]}>
+                            {/* CENTRAL HULL (Sloped Armor) */}
+                            <mesh castShadow receiveShadow position={[0, 0.2, 0]}>
+                                <boxGeometry args={[1.0, 0.6, 2.4]} />
+                                <meshStandardMaterial map={chassis} color="#aabbcc" />
+                                <Edges color="#00ffff" threshold={15} />
+                            </mesh>
+                            {/* Front Armor Plate */}
+                            <mesh position={[0, 0.1, 1.3]} rotation={[0.4, 0, 0]}>
+                                <boxGeometry args={[0.9, 0.4, 0.5]} />
+                                <meshStandardMaterial map={chassis} />
+                                <Edges color="#00ffff" />
+                            </mesh>
+                            {/* Rear Engine Block */}
+                            <mesh position={[0, 0.3, -1.0]}>
+                                <boxGeometry args={[1.2, 0.5, 0.8]} />
+                                <meshStandardMaterial color="#111" />
+                                {/* Vents */}
+                                <meshStandardMaterial emissive="#ff0000" emissiveIntensity={0.2} />
+                            </mesh>
 
-                            {/* TAILLIGHTS (Back of Chassis) */}
-                            <group position={[0, 0, -1.1]}>
-                                {/* Left Taillight */}
-                                <mesh position={[-0.6, 0, 0]}>
-                                    <boxGeometry args={[0.3, 0.2, 0.1]} />
-                                    <meshStandardMaterial color="#ff0000" emissive="#ff0000" emissiveIntensity={4} toneMapped={false} />
+                            {/* --- LEFT TRACK HOUSING --- */}
+                            <group position={[-0.9, -0.1, 0]}>
+                                {/* Track Cover */}
+                                <mesh castShadow>
+                                    <boxGeometry args={[0.6, 0.6, 2.6]} />
+                                    <meshStandardMaterial map={chassis} color="#555" />
+                                    <Edges color="#333" />
                                 </mesh>
-
-                                {/* Right Taillight */}
-                                <mesh position={[0.6, 0, 0]}>
-                                    <boxGeometry args={[0.3, 0.2, 0.1]} />
-                                    <meshStandardMaterial color="#ff0000" emissive="#ff0000" emissiveIntensity={4} toneMapped={false} />
+                                {/* The Track Tread (Visual) */}
+                                <mesh position={[0, -0.35, 0]}>
+                                    <boxGeometry args={[0.5, 0.2, 2.5]} />
+                                    <meshStandardMaterial map={tracks} />
+                                </mesh>
+                                {/* Neon Strip */}
+                                <mesh position={[-0.31, 0, 0]}>
+                                    <planeGeometry args={[0.6, 2.0]} />
+                                    <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={2} side={2} />
                                 </mesh>
                             </group>
-                        </mesh>
 
-                        {/* HEADLIGHTS (Front of Chassis) - Visual Only */}
-                        <group position={[0, 0.2, 1.1]}>
-                            {/* Left Headlight */}
-                            <mesh position={[-0.6, 0, 0]}>
-                                <boxGeometry args={[0.3, 0.2, 0.1]} />
-                                <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={5} toneMapped={false} />
+                            {/* --- RIGHT TRACK HOUSING --- */}
+                            <group position={[0.9, -0.1, 0]}>
+                                {/* Track Cover */}
+                                <mesh castShadow>
+                                    <boxGeometry args={[0.6, 0.6, 2.6]} />
+                                    <meshStandardMaterial map={chassis} color="#555" />
+                                    <Edges color="#333" />
+                                </mesh>
+                                {/* The Track Tread (Visual) */}
+                                <mesh position={[0, -0.35, 0]}>
+                                    <boxGeometry args={[0.5, 0.2, 2.5]} />
+                                    <meshStandardMaterial map={tracks} />
+                                </mesh>
+                                {/* Neon Strip */}
+                                <mesh position={[0.31, 0, 0]}>
+                                    <planeGeometry args={[0.6, 2.0]} />
+                                    <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={2} side={2} />
+                                </mesh>
+                            </group>
+
+                            {/* --- LIGHTS --- */}
+                            {/* Headlights */}
+                            <mesh position={[-0.6, 0.2, 1.35]}>
+                                <boxGeometry args={[0.2, 0.1, 0.1]} />
+                                <meshStandardMaterial color="#fff" emissive="#fff" emissiveIntensity={5} />
+                            </mesh>
+                            <mesh position={[0.6, 0.2, 1.35]}>
+                                <boxGeometry args={[0.2, 0.1, 0.1]} />
+                                <meshStandardMaterial color="#fff" emissive="#fff" emissiveIntensity={5} />
                             </mesh>
 
-                            {/* Right Headlight */}
-                            <mesh position={[0.6, 0, 0]}>
-                                <boxGeometry args={[0.3, 0.2, 0.1]} />
-                                <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={5} toneMapped={false} />
+                            {/* Taillights */}
+                            <mesh position={[-0.6, 0.2, -1.35]}>
+                                <boxGeometry args={[0.2, 0.1, 0.1]} />
+                                <meshStandardMaterial color="#f00" emissive="#f00" emissiveIntensity={3} />
+                            </mesh>
+                            <mesh position={[0.6, 0.2, -1.35]}>
+                                <boxGeometry args={[0.2, 0.1, 0.1]} />
+                                <meshStandardMaterial color="#f00" emissive="#f00" emissiveIntensity={3} />
                             </mesh>
                         </group>
-
-                        {/* TRACKS (Visual only) */}
-                        <mesh position={[-1, 0, 0]}>
-                            <boxGeometry args={[0.4, 0.6, 2.4]} />
-                            <meshStandardMaterial map={tracks} />
-                        </mesh>
-                        <mesh position={[1, 0, 0]}>
-                            <boxGeometry args={[0.4, 0.6, 2.4]} />
-                            <meshStandardMaterial map={tracks} />
-                        </mesh>
                     </group>
                 )}
 
@@ -424,35 +461,52 @@ export const CatTank = () => {
                 <group ref={headRef} position={[0, gameMode === 'zombie' ? 0.7 : 0.8, 0]}>
 
                     {gameMode === 'classic' ? (
-                        // CLASSIC TANK TURRET
+                        // CLASSIC TANK TURRET (ARTILLERY UPGRADE)
                         <group>
-                            {/* Head Base */}
-                            <mesh position={[0, -0.2, 0]}>
-                                <cylinderGeometry args={[0.6, 0.6, 0.2]} />
-                                <meshStandardMaterial color="#333" />
+                            {/* Head Base / Turret Ring - Lowered to connect with new low body */}
+                            <mesh position={[0, -0.3, 0]}>
+                                <cylinderGeometry args={[0.7, 0.8, 0.4]} />
+                                <meshStandardMaterial color="#1a1a2e" />
+                                <Edges color="#00ffff" threshold={20} />
                             </mesh>
-                            {/* Cat Head Cube */}
-                            <mesh castShadow position={[0, 0.3, 0]}>
-                                <boxGeometry args={[1, 0.8, 0.9]} />
-                                <meshStandardMaterial attach="material-0" color="#1a1a2e" />
-                                <meshStandardMaterial attach="material-1" color="#1a1a2e" />
-                                <meshStandardMaterial attach="material-2" color="#1a1a2e" />
-                                <meshStandardMaterial attach="material-3" color="#1a1a2e" />
+
+                            {/* Main Turret Housing */}
+                            <mesh castShadow position={[0, 0.2, -0.1]}>
+                                <boxGeometry args={[1.1, 0.7, 1.2]} />
+                                <meshStandardMaterial attach="material-0" color="#222" />
+                                <meshStandardMaterial attach="material-1" color="#222" />
+                                <meshStandardMaterial attach="material-2" color="#222" />
+                                <meshStandardMaterial attach="material-3" color="#222" />
                                 <meshStandardMaterial attach="material-4" map={catFace} />
-                                <meshStandardMaterial attach="material-5" color="#1a1a2e" />
+                                <meshStandardMaterial attach="material-5" color="#222" />
                                 <Edges color="#ff00ff" threshold={15} />
                             </mesh>
-                            {/* Ears */}
-                            <mesh position={[-0.35, 0.8, 0]} rotation={[0, 0, 0.2]}>
-                                <coneGeometry args={[0.15, 0.4, 4]} />
-                                <meshStandardMaterial color="#1a1a2e" />
-                                <Edges color="#ff00ff" />
+
+                            {/* Artillery Sights / Ears */}
+                            <mesh position={[-0.6, 0.1, 0.2]} rotation={[0, 0, 0]}>
+                                <boxGeometry args={[0.2, 0.4, 0.6]} />
+                                <meshStandardMaterial color="#333" />
+                                <mesh position={[0, 0, 0.31]}>
+                                    <planeGeometry args={[0.15, 0.3]} />
+                                    <meshStandardMaterial color="#00ff00" emissive="#00ff00" />
+                                </mesh>
                             </mesh>
-                            <mesh position={[0.35, 0.8, 0]} rotation={[0, 0, -0.2]}>
-                                <coneGeometry args={[0.15, 0.4, 4]} />
-                                <meshStandardMaterial color="#1a1a2e" />
-                                <Edges color="#ff00ff" />
+                            <mesh position={[0.6, 0.1, 0.2]} rotation={[0, 0, 0]}>
+                                <boxGeometry args={[0.2, 0.4, 0.6]} />
+                                <meshStandardMaterial color="#333" />
                             </mesh>
+
+                            {/* Radar Dish on top */}
+                            <group position={[0.4, 0.7, -0.4]} rotation={[0.2, 0.4, 0]}>
+                                <mesh>
+                                    <cylinderGeometry args={[0.3, 0.05, 0.1]} />
+                                    <meshStandardMaterial color="#444" />
+                                </mesh>
+                                <mesh position={[0, 0.05, 0]} rotation={[0, 0, 0]}>
+                                    <cylinderGeometry args={[0.02, 0.02, 0.4]} />
+                                    <meshStandardMaterial color="#888" />
+                                </mesh>
+                            </group>
                         </group>
                     ) : (
                         // ZOMBIE MODE HEAD ONLY (Gun is on body now)
