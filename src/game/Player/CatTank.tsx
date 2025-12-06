@@ -497,6 +497,7 @@ export const CatTank = () => {
                         <meshBasicMaterial visible={false} />
                     </mesh>
                 </group>
-            </>
-            );
+            </group>
+        </>
+    );
 };
