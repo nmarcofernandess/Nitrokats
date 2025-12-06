@@ -1,12 +1,12 @@
 import { useRef } from 'react';
-import { useFrame, useThree } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
 import { useGameStore } from '../store';
 import { MathUtils } from 'three';
 
 export const VFXManager = () => {
     const particles = useGameStore((state) => state.particles);
     const updateParticles = useGameStore((state) => state.updateParticles);
-    const { camera } = useThree();
+    // const { camera } = useThree(); // Camera unused since shake disabled
 
     const shake = useGameStore((state) => state.shake);
     const triggerShake = useGameStore((state) => state.triggerShake);
@@ -25,8 +25,7 @@ export const VFXManager = () => {
 
         // Screen Shake Decay
         if (currentShake.current > 0) {
-            const intensity = currentShake.current;
-            const intensity = currentShake.current;
+            // const intensity = currentShake.current;
             // camera.position.x += (Math.random() - 0.5) * intensity;
             // camera.position.y += (Math.random() - 0.5) * intensity;
             // camera.position.z += (Math.random() - 0.5) * intensity;

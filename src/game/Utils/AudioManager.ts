@@ -51,30 +51,30 @@ class AudioController {
     };
 
     playShoot = () => {
-        // Original implementation:
-        // if (!this.ctx || !this.masterGain) return;
-        // this.resume();
+        // Original implementation (Restored for Retro feel):
+        if (!this.ctx || !this.masterGain) return;
+        this.resume();
 
-        // const osc = this.ctx.createOscillator();
-        // const gain = this.ctx.createGain();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
 
-        // osc.connect(gain);
-        // gain.connect(this.masterGain);
+        osc.connect(gain);
+        gain.connect(this.masterGain);
 
-        // // Retro Pew: Sawtooth wave, pitch drop
-        // osc.type = 'sawtooth';
-        // osc.frequency.setValueAtTime(880, this.ctx.currentTime); // Start High
-        // osc.frequency.exponentialRampToValueAtTime(110, this.ctx.currentTime + 0.15); // Drop Fast
+        // Retro Pew: Sawtooth wave, pitch drop
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(880, this.ctx.currentTime); // Start High
+        osc.frequency.exponentialRampToValueAtTime(110, this.ctx.currentTime + 0.15); // Drop Fast
 
-        // gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
-        // gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.3, this.ctx.currentTime); // Slightly lower volume
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
 
-        // osc.start();
-        // osc.stop(this.ctx.currentTime + 0.15);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.15);
 
         // New simplified implementation using playTone
-        this.playTone(440, 'square', 0.1);
-        this.playTone(220, 'sawtooth', 0.1, 0.05);
+        // this.playTone(440, 'square', 0.1);
+        // this.playTone(220, 'sawtooth', 0.1, 0.05);
     };
 
     playExplosion = () => {

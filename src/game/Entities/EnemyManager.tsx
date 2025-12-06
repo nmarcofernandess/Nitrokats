@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Vector3 as ThreeVector3 } from 'three';
 import { useGameStore } from '../store';
 import { EnemyTank } from './EnemyTank';
@@ -13,29 +13,46 @@ export const EnemyManager = () => {
     const gameState = useGameStore((state) => state.gameState);
     const gameMode = useGameStore((state) => state.gameMode);
 
-    // Wave Logic
+    const [isWaitingNextWave, setIsWaitingNextWave] = useState(false);
+    const spawnedWave = useRef(0);
+
+    // Reset spawn tracker on game restart (or when wave goes back to 1)
     useEffect(() => {
-        if (gameState === 'playing' && enemies.length === 0) {
+        if (wave === 1 && spawnedWave.current > 1) {
+            spawnedWave.current = 0;
+            setIsWaitingNextWave(false);
+        }
+    }, [wave]);
+
+    // Wave Completion Logic
+    useEffect(() => {
+        if (gameState === 'playing' && enemies.length === 0 && spawnedWave.current === wave && !isWaitingNextWave) {
+            setIsWaitingNextWave(true);
             const timeout = setTimeout(() => {
                 nextWave();
-            }, 1000);
+                setIsWaitingNextWave(false);
+            }, 1000); // 1-second delay between waves
             return () => clearTimeout(timeout);
         }
-    }, [enemies.length, gameState, nextWave]);
+    }, [enemies.length, gameState, wave, isWaitingNextWave, nextWave]);
 
     // Spawn Logic
     useEffect(() => {
-        if (gameState === 'playing' && enemies.length === 0) {
+        if (gameState === 'playing' && spawnedWave.current < wave) {
+            // Spawn for new wave
             const count = GameBalance.getKillsNeededForWave(wave);
+            // console.log(`Spawning Wave ${wave}: ${count} enemies`);
+
             for (let i = 0; i < count; i++) {
                 const angle = Math.random() * Math.PI * 2;
-                const radius = 25 + Math.random() * 10; // Slightly further out
+                const radius = 25 + Math.random() * 10;
                 const x = Math.sin(angle) * radius;
                 const z = Math.cos(angle) * radius;
                 addEnemy(new ThreeVector3(x, 0, z));
             }
+            spawnedWave.current = wave;
         }
-    }, [wave, gameState, addEnemy, enemies.length]);
+    }, [wave, gameState, addEnemy]);
 
     return (
         <>
