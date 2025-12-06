@@ -417,71 +417,70 @@ export const CatTank = () => {
                             </group>
                         </group>
                     </group>
-                    </group>
                 )}
 
-            {/* TANK HEAD / SOLDIER HEAD */}
-            {/* Visuals adjusted based on mode */}
-            <group ref={headRef} position={[0, gameMode === 'zombie' ? 0.7 : 0.8, 0]}>
+                {/* TANK HEAD / SOLDIER HEAD */}
+                {/* Visuals adjusted based on mode */}
+                <group ref={headRef} position={[0, gameMode === 'zombie' ? 0.7 : 0.8, 0]}>
 
-                {gameMode === 'classic' ? (
-                    // CLASSIC TANK TURRET
-                    <group>
-                        {/* Head Base */}
-                        <mesh position={[0, -0.2, 0]}>
-                            <cylinderGeometry args={[0.6, 0.6, 0.2]} />
-                            <meshStandardMaterial color="#333" />
-                        </mesh>
-                        {/* Cat Head Cube */}
-                        <mesh castShadow position={[0, 0.3, 0]}>
-                            <boxGeometry args={[1, 0.8, 0.9]} />
-                            <meshStandardMaterial attach="material-0" color="#1a1a2e" />
-                            <meshStandardMaterial attach="material-1" color="#1a1a2e" />
-                            <meshStandardMaterial attach="material-2" color="#1a1a2e" />
-                            <meshStandardMaterial attach="material-3" color="#1a1a2e" />
-                            <meshStandardMaterial attach="material-4" map={catFace} />
-                            <meshStandardMaterial attach="material-5" color="#1a1a2e" />
-                            <Edges color="#ff00ff" threshold={15} />
-                        </mesh>
-                        {/* Ears */}
-                        <mesh position={[-0.35, 0.8, 0]} rotation={[0, 0, 0.2]}>
-                            <coneGeometry args={[0.15, 0.4, 4]} />
-                            <meshStandardMaterial color="#1a1a2e" />
-                            <Edges color="#ff00ff" />
-                        </mesh>
-                        <mesh position={[0.35, 0.8, 0]} rotation={[0, 0, -0.2]}>
-                            <coneGeometry args={[0.15, 0.4, 4]} />
-                            <meshStandardMaterial color="#1a1a2e" />
-                            <Edges color="#ff00ff" />
-                        </mesh>
-                    </group>
-                ) : (
-                    // ZOMBIE MODE HEAD ONLY (Gun is on body now)
-                    <group>
-                        {/* Smaller Head for Soldier */}
-                        <mesh castShadow position={[0, 0, 0]}>
-                            <boxGeometry args={[0.6, 0.5, 0.5]} />
-                            <meshStandardMaterial attach="material-0" color="#1a1a2e" />
-                            <meshStandardMaterial attach="material-1" color="#1a1a2e" />
-                            <meshStandardMaterial attach="material-2" color="#1a1a2e" />
-                            <meshStandardMaterial attach="material-3" color="#1a1a2e" />
-                            <meshStandardMaterial attach="material-4" map={catFace} />
-                            <meshStandardMaterial attach="material-5" color="#1a1a2e" />
-                        </mesh>
-                        {/* Ears */}
-                        <mesh position={[-0.2, 0.3, 0]} rotation={[0, 0, 0.2]}>
-                            <coneGeometry args={[0.1, 0.2, 4]} />
-                            <meshStandardMaterial color="#1a1a2e" />
-                        </mesh>
-                        <mesh position={[0.2, 0.3, 0]} rotation={[0, 0, -0.2]}>
-                            <coneGeometry args={[0.1, 0.2, 4]} />
-                            <meshStandardMaterial color="#1a1a2e" />
-                        </mesh>
-                    </group>
-                )}
+                    {gameMode === 'classic' ? (
+                        // CLASSIC TANK TURRET
+                        <group>
+                            {/* Head Base */}
+                            <mesh position={[0, -0.2, 0]}>
+                                <cylinderGeometry args={[0.6, 0.6, 0.2]} />
+                                <meshStandardMaterial color="#333" />
+                            </mesh>
+                            {/* Cat Head Cube */}
+                            <mesh castShadow position={[0, 0.3, 0]}>
+                                <boxGeometry args={[1, 0.8, 0.9]} />
+                                <meshStandardMaterial attach="material-0" color="#1a1a2e" />
+                                <meshStandardMaterial attach="material-1" color="#1a1a2e" />
+                                <meshStandardMaterial attach="material-2" color="#1a1a2e" />
+                                <meshStandardMaterial attach="material-3" color="#1a1a2e" />
+                                <meshStandardMaterial attach="material-4" map={catFace} />
+                                <meshStandardMaterial attach="material-5" color="#1a1a2e" />
+                                <Edges color="#ff00ff" threshold={15} />
+                            </mesh>
+                            {/* Ears */}
+                            <mesh position={[-0.35, 0.8, 0]} rotation={[0, 0, 0.2]}>
+                                <coneGeometry args={[0.15, 0.4, 4]} />
+                                <meshStandardMaterial color="#1a1a2e" />
+                                <Edges color="#ff00ff" />
+                            </mesh>
+                            <mesh position={[0.35, 0.8, 0]} rotation={[0, 0, -0.2]}>
+                                <coneGeometry args={[0.15, 0.4, 4]} />
+                                <meshStandardMaterial color="#1a1a2e" />
+                                <Edges color="#ff00ff" />
+                            </mesh>
+                        </group>
+                    ) : (
+                        // ZOMBIE MODE HEAD ONLY (Gun is on body now)
+                        <group>
+                            {/* Smaller Head for Soldier */}
+                            <mesh castShadow position={[0, 0, 0]}>
+                                <boxGeometry args={[0.6, 0.5, 0.5]} />
+                                <meshStandardMaterial attach="material-0" color="#1a1a2e" />
+                                <meshStandardMaterial attach="material-1" color="#1a1a2e" />
+                                <meshStandardMaterial attach="material-2" color="#1a1a2e" />
+                                <meshStandardMaterial attach="material-3" color="#1a1a2e" />
+                                <meshStandardMaterial attach="material-4" map={catFace} />
+                                <meshStandardMaterial attach="material-5" color="#1a1a2e" />
+                            </mesh>
+                            {/* Ears */}
+                            <mesh position={[-0.2, 0.3, 0]} rotation={[0, 0, 0.2]}>
+                                <coneGeometry args={[0.1, 0.2, 4]} />
+                                <meshStandardMaterial color="#1a1a2e" />
+                            </mesh>
+                            <mesh position={[0.2, 0.3, 0]} rotation={[0, 0, -0.2]}>
+                                <coneGeometry args={[0.1, 0.2, 4]} />
+                                <meshStandardMaterial color="#1a1a2e" />
+                            </mesh>
+                        </group>
+                    )}
 
-                {/* Cannon Anchor (Invisible) */}
-                {/* In Zombie Mode, Gun is on body. But body rotates to mouse. So firing straight from body works? 
+                    {/* Cannon Anchor (Invisible) */}
+                    {/* In Zombie Mode, Gun is on body. But body rotates to mouse. So firing straight from body works? 
                         The rotation logic ensures Body Y = Mouse Angle.
                         So pure (0,0,1) + Body Pos should be correct.
                         However, useFrame logic adds laser based on head rotation + body rotation.
@@ -489,16 +488,15 @@ export const CatTank = () => {
                         So it should work perfectly.
                         Position adjustment:
                     */}
-                <mesh
-                    ref={cannonRef}
-                    position={gameMode === 'zombie' ? [0, -0.4, 1.2] : [0.2, 0.4, 0.5]}
-                    rotation={[Math.PI / 2, 0, 0]}
-                >
-                    <cylinderGeometry args={[0.02, 0.02, 0.2]} />
-                    <meshBasicMaterial visible={false} />
-                </mesh>
-            </group>
-        </group >
-        </>
-    );
+                    <mesh
+                        ref={cannonRef}
+                        position={gameMode === 'zombie' ? [0, -0.4, 1.2] : [0.2, 0.4, 0.5]}
+                        rotation={[Math.PI / 2, 0, 0]}
+                    >
+                        <cylinderGeometry args={[0.02, 0.02, 0.2]} />
+                        <meshBasicMaterial visible={false} />
+                    </mesh>
+                </group>
+            </>
+            );
 };

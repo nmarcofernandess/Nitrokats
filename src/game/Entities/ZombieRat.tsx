@@ -25,7 +25,7 @@ export const ZombieRat = ({ data }: { data: { id: string, position: any, rotatio
     const wave = useGameStore((state) => state.wave);
 
     // Textures
-    const [face] = useState(() => generateCatFaceTexture('#4a4a4a', '#ff0000')); // Dark Grey/Red
+    // const [face] = useState(() => generateCatFaceTexture('#4a4a4a', '#ff0000')); // Unused currently
 
     // Initialize Yuka Vehicle
     useEffect(() => {
@@ -161,8 +161,8 @@ export const ZombieRat = ({ data }: { data: { id: string, position: any, rotatio
                 </mesh>
 
                 {/* Ears (Round) */}
-                <mesh position={[-0.2, 0.3, -0.1]} rotation={[0, 0, 0.2]}><cylinderGeometry args={[0.15, 0.15, 0.05]} rotation={[Math.PI / 2, 0, 0]} /><meshStandardMaterial color="#ffaaaa" /></mesh>
-                <mesh position={[0.2, 0.3, -0.1]} rotation={[0, 0, -0.2]}><cylinderGeometry args={[0.15, 0.15, 0.05]} rotation={[Math.PI / 2, 0, 0]} /><meshStandardMaterial color="#ffaaaa" /></mesh>
+                <mesh position={[-0.2, 0.3, -0.1]} rotation={[Math.PI / 2, 0, 0.2]}><cylinderGeometry args={[0.15, 0.15, 0.05]} /><meshStandardMaterial color="#ffaaaa" /></mesh>
+                <mesh position={[0.2, 0.3, -0.1]} rotation={[Math.PI / 2, 0, -0.2]}><cylinderGeometry args={[0.15, 0.15, 0.05]} /><meshStandardMaterial color="#ffaaaa" /></mesh>
             </group>
         </group>
     );
