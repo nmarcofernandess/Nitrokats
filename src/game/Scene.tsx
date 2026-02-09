@@ -1,6 +1,6 @@
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { OrthographicCamera } from '@react-three/drei';
-import { EffectComposer, Bloom } from '@react-three/postprocessing';
+import { Bloom, EffectComposer } from '@react-three/postprocessing';
 import { CatTank } from './Player/CatTank';
 import { LaserManager } from './Projectiles/LaserManager';
 import { TargetManager } from './World/TargetManager';
@@ -9,66 +9,64 @@ import { Arena } from './World/Arena';
 import { EnemyManager } from './Entities/EnemyManager';
 import { useGameStore } from './store';
 import { PowerUp } from './Entities/PowerUp';
-import { useFrame } from '@react-three/fiber';
 import { aiManager } from './Utils/AIManager';
 
+interface GameSystemsProps {
+  active: boolean;
+}
+
+const GameSystems = ({ active }: GameSystemsProps) => {
+  useFrame((_, delta) => {
+    if (active) {
+      aiManager.update(delta);
+    }
+  });
+
+  return null;
+};
+
 export const Scene = () => {
-    const powerUps = useGameStore((state) => state.powerUps);
+  const powerUps = useGameStore((state) => state.powerUps);
+  const gameState = useGameStore((state) => state.gameState);
 
-    // Drive AI Simulation
-    // System Loop Component
-    const GameSystems = () => {
-        useFrame((_, delta) => {
-            aiManager.update(delta);
-        });
-        return null;
-    };
+  const gameplayVisible = gameState !== 'menu';
 
-    // Pass gameState to components if needed, or use it for scene logic
-    // Currently UI handles menu/gameover overlay.
-    // Maybe we want to hide game world when in menu?
+  return (
+    <Canvas
+      shadows
+      dpr={[1, 1.5]}
+      className="absolute inset-0"
+      style={{ background: '#050505' }}
+      gl={{ antialias: false, powerPreference: 'high-performance' }}
+    >
+      <OrthographicCamera makeDefault position={[20, 25, 20]} zoom={50} near={-100} far={200} />
 
-    // Always render canvas, but world content depends on state? 
-    // Actually, background effect works for menu too.
-    return (
-        <Canvas shadows className="absolute inset-0" style={{ background: '#050505' }}>
-            {/* Camera positioned for isometric view - CatTank handles follow */}
-            <OrthographicCamera
-                makeDefault
-                position={[20, 25, 20]}
-                zoom={50}
-                near={-100}
-                far={200}
-            />
+      <ambientLight intensity={0.2} />
+      <pointLight position={[10, 10, 10]} intensity={1} castShadow />
+      <directionalLight position={[-10, 20, 10]} intensity={0.5} castShadow />
 
-            {/* Lighting */}
-            <ambientLight intensity={0.2} />
-            <pointLight position={[10, 10, 10]} intensity={1} castShadow />
-            <directionalLight position={[-10, 20, 10]} intensity={0.5} castShadow />
+      <GameSystems active={gameState === 'playing'} />
+      <Arena />
 
-            {/* World */}
-            <GameSystems />
-            <Arena />
-            <CatTank />
-            <LaserManager />
-            <TargetManager />
-            <VFXManager />
+      {gameplayVisible && (
+        <>
+          <CatTank />
+          <LaserManager />
+          <TargetManager />
+          <VFXManager />
+          <EnemyManager />
 
-            {/* Enemies */}
-            <EnemyManager />
+          {powerUps.map((powerUp) => (
+            <PowerUp key={powerUp.id} {...powerUp} />
+          ))}
+        </>
+      )}
 
-            {/* Power Ups */}
-            {powerUps.map((p) => (
-                <PowerUp key={p.id} {...p} />
-            ))}
+      <EffectComposer>
+        <Bloom luminanceThreshold={0} mipmapBlur intensity={2.0} radius={0.4} />
+      </EffectComposer>
 
-            {/* Post Processing */}
-            <EffectComposer>
-                <Bloom luminanceThreshold={0} mipmapBlur intensity={2.0} radius={0.4} />
-            </EffectComposer>
-
-            {/* Background Color */}
-            <color attach="background" args={['#050505']} />
-        </Canvas>
-    );
+      <color attach="background" args={['#050505']} />
+    </Canvas>
+  );
 };

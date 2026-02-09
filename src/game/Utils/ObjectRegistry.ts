@@ -1,48 +1,58 @@
 import { Group, Vector3 } from 'three';
 
-// A simple static registry to hold references to game objects
-// This allows high-frequency logic (collision, AI) without triggering React re-renders via Store updates.
-
 interface RegisteredObject {
-    id: string;
-    type: 'player' | 'enemy' | 'block';
-    ref: Group; // mesh or group ref
-    radius: number;
+  id: string;
+  type: 'player' | 'enemy' | 'block';
+  ref: Group;
+  radius: number;
 }
 
 class GameRegistry {
-    player: Group | null = null;
-    enemies: Map<string, RegisteredObject> = new Map();
-    blocks: Map<string, RegisteredObject> = new Map();
+  private player: Group | null = null;
+  private enemies: Map<string, RegisteredObject> = new Map();
+  private blocks: Map<string, RegisteredObject> = new Map();
 
-    registerPlayer(ref: Group) {
-        this.player = ref;
-    }
+  registerPlayer(ref: Group) {
+    this.player = ref;
+  }
 
-    registerEnemy(id: string, ref: Group) {
-        this.enemies.set(id, { id, type: 'enemy', ref, radius: 1.5 });
-    }
+  unregisterPlayer() {
+    this.player = null;
+  }
 
-    unregisterEnemy(id: string) {
-        this.enemies.delete(id);
-    }
+  registerEnemy(id: string, ref: Group) {
+    this.enemies.set(id, { id, type: 'enemy', ref, radius: 1.5 });
+  }
 
-    registerBlock(id: string, ref: Group) {
-        this.blocks.set(id, { id, type: 'block', ref, radius: 1.2 });
-    }
+  unregisterEnemy(id: string) {
+    this.enemies.delete(id);
+  }
 
-    // Direct Access for Logic
-    getPlayerPosition(): Vector3 | null {
-        return this.player ? this.player.position : null;
-    }
+  registerBlock(id: string, ref: Group) {
+    this.blocks.set(id, { id, type: 'block', ref, radius: 1.2 });
+  }
 
-    getEnemies() {
-        return Array.from(this.enemies.values());
-    }
+  unregisterBlock(id: string) {
+    this.blocks.delete(id);
+  }
 
-    getBlocks() {
-        return Array.from(this.blocks.values());
-    }
+  clear() {
+    this.player = null;
+    this.enemies.clear();
+    this.blocks.clear();
+  }
+
+  getPlayerPosition(): Vector3 | null {
+    return this.player ? this.player.position : null;
+  }
+
+  getEnemies(): RegisteredObject[] {
+    return Array.from(this.enemies.values());
+  }
+
+  getBlocks(): RegisteredObject[] {
+    return Array.from(this.blocks.values());
+  }
 }
 
 export const gameRegistry = new GameRegistry();

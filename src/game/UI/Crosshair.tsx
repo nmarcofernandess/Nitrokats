@@ -1,21 +1,28 @@
 import { useRef } from 'react';
+import type { RefObject } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Vector3, Mesh } from 'three';
+import { Mesh, Vector3 } from 'three';
 
-export const Crosshair = ({ position }: { position: Vector3 }) => {
-    const ref = useRef<Mesh>(null);
+interface CrosshairProps {
+  targetRef: RefObject<Vector3>;
+}
 
-    useFrame(() => {
-        if (ref.current) {
-            // Rotate crosshair for style
-            ref.current.rotation.z += 0.05;
-        }
-    });
+export const Crosshair = ({ targetRef }: CrosshairProps) => {
+  const ref = useRef<Mesh>(null);
 
-    return (
-        <mesh ref={ref} position={position} rotation={[-Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[0.5, 0.6, 32]} />
-            <meshBasicMaterial color="#00ffff" transparent opacity={0.6} />
-        </mesh>
-    );
+  useFrame(() => {
+    if (!ref.current || !targetRef.current) {
+      return;
+    }
+
+    ref.current.rotation.z += 0.05;
+    ref.current.position.copy(targetRef.current);
+  });
+
+  return (
+    <mesh ref={ref} rotation={[-Math.PI / 2, 0, 0]}>
+      <ringGeometry args={[0.5, 0.6, 32]} />
+      <meshBasicMaterial color="#00ffff" transparent opacity={0.6} />
+    </mesh>
+  );
 };

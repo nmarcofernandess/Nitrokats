@@ -1,25 +1,18 @@
-// Game Balance Calculations
+// Centralized game-balance knobs.
 export const GameBalance = {
-    // Base Stats
-    baseEnemyDamage: 10,
-    damageScalePerWave: 0.2, // 20% increase per wave
+  baseEnemyDamage: 10,
+  damageScalePerWave: 0.2,
 
-    // Calculate damage based on current wave
-    getDamageForWave: (wave: number) => {
-        return Math.floor(GameBalance.baseEnemyDamage * (1 + (wave - 1) * GameBalance.damageScalePerWave));
-    },
+  basePlayerDamage: 12,
+  playerDamageScalePerWave: 0.08,
 
-    // Wave Progression
-    // Wave 1: 10 enemies, Wave 2: 20, etc.
-    getKillsNeededForWave: (wave: number) => {
-        return wave * 10;
-    },
+  getDamageForWave: (wave: number) =>
+    Math.floor(GameBalance.baseEnemyDamage * (1 + (wave - 1) * GameBalance.damageScalePerWave)),
 
-    // Enemy Toughness
-    // Player deals 10 damage per shot.
-    // Wave 1: 30 HP (3 shots)
-    // Scaling: +10 HP (1 extra shot) per wave.
-    getEnemyHealthForWave: (wave: number) => {
-        return 30 + (wave - 1) * 10;
-    }
+  getPlayerDamageForWave: (wave: number) =>
+    Math.floor(GameBalance.basePlayerDamage * (1 + (wave - 1) * GameBalance.playerDamageScalePerWave)),
+
+  getKillsNeededForWave: (wave: number) => wave * 10,
+
+  getEnemyHealthForWave: (wave: number) => 30 + (wave - 1) * 10,
 };

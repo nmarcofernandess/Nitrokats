@@ -1,54 +1,66 @@
-import { useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { Color, InstancedMesh, MathUtils, Object3D } from 'three';
 import { useGameStore } from '../store';
-import { MathUtils } from 'three';
+
+const MAX_PARTICLES = 800;
 
 export const VFXManager = () => {
-    const particles = useGameStore((state) => state.particles);
-    const updateParticles = useGameStore((state) => state.updateParticles);
-    // const { camera } = useThree(); // Camera unused since shake disabled
+  const updateParticles = useGameStore((state) => state.updateParticles);
+  const shake = useGameStore((state) => state.shake);
+  const triggerShake = useGameStore((state) => state.triggerShake);
 
-    const shake = useGameStore((state) => state.shake);
-    const triggerShake = useGameStore((state) => state.triggerShake);
+  const currentShake = useRef(0);
+  const meshRef = useRef<InstancedMesh>(null);
 
-    // Shake state (local for smooth decay, but triggered by store)
-    const currentShake = useRef(0);
+  const dummy = useMemo(() => new Object3D(), []);
+  const color = useMemo(() => new Color(), []);
 
-    // Sync store shake to local ref
-    if (shake > 0) {
-        currentShake.current = shake;
-        triggerShake(0); // Reset store immediately
+  useEffect(() => {
+    if (shake <= 0) {
+      return;
     }
 
-    useFrame((_, delta) => {
-        updateParticles(delta);
+    currentShake.current = shake;
+    triggerShake(0);
+  }, [shake, triggerShake]);
 
-        // Screen Shake Decay
-        if (currentShake.current > 0) {
-            // const intensity = currentShake.current;
-            // camera.position.x += (Math.random() - 0.5) * intensity;
-            // camera.position.y += (Math.random() - 0.5) * intensity;
-            // camera.position.z += (Math.random() - 0.5) * intensity;
-            // Shake Disabled for Performance
+  useFrame((_, delta) => {
+    updateParticles(delta);
 
-            currentShake.current = MathUtils.lerp(currentShake.current, 0, delta * 10);
-        }
-    });
+    const particles = useGameStore.getState().particles;
+    const mesh = meshRef.current;
 
-    // Expose shake function globally or via store? 
-    // For now, let's just use a window event or simple export if possible.
-    // Actually, let's attach it to the window for "Red Pill" hacky speed, 
-    // or better, add 'triggerShake' to store.
-    // But for now, let's just render particles.
+    if (mesh) {
+      const count = Math.min(particles.length, MAX_PARTICLES);
+      for (let index = 0; index < count; index += 1) {
+        const particle = particles[index];
 
-    return (
-        <>
-            {particles.map((p) => (
-                <mesh key={p.id} position={p.position}>
-                    <boxGeometry args={[0.2, 0.2, 0.2]} />
-                    <meshBasicMaterial color={p.color} />
-                </mesh>
-            ))}
-        </>
-    );
+        dummy.position.copy(particle.position);
+        dummy.scale.setScalar(Math.max(0.05, particle.life * 0.2));
+        dummy.updateMatrix();
+
+        mesh.setMatrixAt(index, dummy.matrix);
+        color.set(particle.color);
+        mesh.setColorAt(index, color);
+      }
+
+      mesh.count = count;
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) {
+        mesh.instanceColor.needsUpdate = true;
+      }
+    }
+
+    if (currentShake.current > 0) {
+      currentShake.current = MathUtils.lerp(currentShake.current, 0, delta * 10);
+    }
+  });
+
+  return (
+    <instancedMesh ref={meshRef} args={[undefined, undefined, MAX_PARTICLES]} frustumCulled={false}>
+      <boxGeometry args={[0.2, 0.2, 0.2]} />
+      <meshBasicMaterial vertexColors />
+    </instancedMesh>
+  );
 };

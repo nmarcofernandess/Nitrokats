@@ -1,52 +1,49 @@
 declare module 'yuka' {
-    export class EntityManager {
-        add(entity: any): void;
-        remove(entity: any): void;
-        update(delta: number): void;
-    }
+  export class Vector3 {
+    x: number;
+    y: number;
+    z: number;
 
-    export class Time {
-        update(): number;
-        getDelta(): number;
-    }
+    constructor(x?: number, y?: number, z?: number);
 
-    export class GameEntity {
-        position: Vector3;
-        rotation: Quaternion;
-        constructor();
-    }
+    set(x: number, y: number, z: number): this;
+    squaredLength(): number;
+  }
 
-    export class Vehicle extends GameEntity {
-        maxSpeed: number;
-        mass: number;
-        velocity: Vector3;
-        steering: SteeringManager;
-    }
+  export class Quaternion {}
 
-    export class SteeringManager {
-        add(behavior: SteeringBehavior): void;
-    }
+  export class GameEntity {
+    position: Vector3;
+    rotation: Quaternion;
 
-    export class SteeringBehavior { }
+    constructor();
+  }
 
-    export class ArriveBehavior extends SteeringBehavior {
-        constructor(target: Vector3, deceleration?: number, tolerance?: number);
-    }
+  export class SteeringBehavior {}
 
-    export class SeparationBehavior extends SteeringBehavior {
-        constructor();
-    }
+  export class SteeringManager {
+    add(behavior: SteeringBehavior): void;
+  }
 
-    export class Vector3 {
-        x: number;
-        y: number;
-        z: number;
-        set(x: number, y: number, z: number): this;
-        squaredLength(): number;
-        constructor(x?: number, y?: number, z?: number);
-    }
+  export class ArriveBehavior extends SteeringBehavior {
+    constructor(target: Vector3, deceleration?: number, tolerance?: number);
+  }
 
-    export class Quaternion {
-        // Add minimal required methods
-    }
+  export class Vehicle extends GameEntity {
+    maxSpeed: number;
+    mass: number;
+    velocity: Vector3;
+    steering: SteeringManager;
+  }
+
+  export class EntityManager {
+    add(entity: GameEntity): void;
+    remove(entity: GameEntity): void;
+    update(delta: number): void;
+  }
+
+  export class Time {
+    update(): number;
+    getDelta(): number;
+  }
 }

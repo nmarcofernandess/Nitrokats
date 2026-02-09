@@ -1,180 +1,216 @@
-// Simple Procedural Audio Manager (Retro Style)
-// Uses Web Audio API to generate sounds on the fly. No assets needed.
+// Procedural audio manager using the Web Audio API.
+
+type WindowWithWebkitAudio = Window & {
+  webkitAudioContext?: typeof AudioContext;
+};
 
 class AudioController {
-    ctx: AudioContext | null = null;
-    masterGain: GainNode | null = null;
-    musicOscillators: OscillatorNode[] = [];
-    isMuted: boolean = false;
+  private ctx: AudioContext | null = null;
+  private masterGain: GainNode | null = null;
+  private musicIntervalId: number | null = null;
+  private musicNoteIndex = 0;
+  private readonly notes = [110, 110, 130, 110, 97, 97, 110, 130];
 
-    constructor() {
-        // Init on user interaction usually, handled safely
-        try {
-            const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext);
-            this.ctx = new AudioContextClass();
-            this.masterGain = this.ctx.createGain();
-            this.masterGain.gain.value = 0.3; // Master volume
-            this.masterGain.connect(this.ctx.destination);
-        } catch (e) {
-            console.error('Web Audio API not supported', e);
-        }
+  private isMuted = false;
+
+  constructor() {
+    try {
+      const AudioContextClass =
+        window.AudioContext ?? (window as WindowWithWebkitAudio).webkitAudioContext;
+
+      if (!AudioContextClass) {
+        throw new Error('Web Audio API not available');
+      }
+
+      this.ctx = new AudioContextClass();
+      this.masterGain = this.ctx.createGain();
+      this.masterGain.gain.value = 0.3;
+      this.masterGain.connect(this.ctx.destination);
+    } catch (error) {
+      // Keep app functional even when audio cannot be initialized.
+      console.error('Web Audio API not supported', error);
+    }
+  }
+
+  private resume = () => {
+    if (this.ctx && this.ctx.state === 'suspended') {
+      void this.ctx.resume();
+    }
+  };
+
+  setMuted = (muted: boolean) => {
+    this.isMuted = muted;
+    if (!this.masterGain) {
+      return;
     }
 
-    // Ensure context is running (browsers block auto-play)
-    resume = () => {
-        if (this.ctx && this.ctx.state === 'suspended') {
-            this.ctx.resume();
-        }
-    };
+    this.masterGain.gain.value = muted ? 0 : 0.3;
+  };
 
-    // --- SFX ---
+  playTone = (
+    frequency: number,
+    type: OscillatorType,
+    duration: number,
+    delay = 0,
+    volume = 0.5,
+  ) => {
+    if (!this.ctx || !this.masterGain || this.isMuted) {
+      return;
+    }
 
-    // Helper for simple tones
-    public playTone = (frequency: number, type: OscillatorType, duration: number, delay: number = 0, volume: number = 0.5) => {
-        if (!this.ctx || !this.masterGain) return;
-        this.resume();
+    this.resume();
 
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
 
-        osc.connect(gain);
-        gain.connect(this.masterGain);
+    osc.connect(gain);
+    gain.connect(this.masterGain);
 
-        osc.type = type;
-        osc.frequency.setValueAtTime(frequency, this.ctx.currentTime + delay);
+    osc.type = type;
+    osc.frequency.setValueAtTime(frequency, this.ctx.currentTime + delay);
 
-        gain.gain.setValueAtTime(volume, this.ctx.currentTime + delay);
-        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + delay + duration);
+    gain.gain.setValueAtTime(volume, this.ctx.currentTime + delay);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + delay + duration);
 
-        osc.start(this.ctx.currentTime + delay);
-        osc.stop(this.ctx.currentTime + delay + duration);
-    };
+    osc.start(this.ctx.currentTime + delay);
+    osc.stop(this.ctx.currentTime + delay + duration);
+  };
 
-    playShoot = () => {
-        // Original implementation (Restored for Retro feel):
-        if (!this.ctx || !this.masterGain) return;
-        this.resume();
+  playShoot = () => {
+    if (!this.ctx || !this.masterGain || this.isMuted) {
+      return;
+    }
 
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
+    this.resume();
 
-        osc.connect(gain);
-        gain.connect(this.masterGain);
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
 
-        // Retro Pew: Sawtooth wave, pitch drop
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(880, this.ctx.currentTime); // Start High
-        osc.frequency.exponentialRampToValueAtTime(110, this.ctx.currentTime + 0.15); // Drop Fast
+    osc.connect(gain);
+    gain.connect(this.masterGain);
 
-        gain.gain.setValueAtTime(0.3, this.ctx.currentTime); // Slightly lower volume
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(880, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(110, this.ctx.currentTime + 0.15);
 
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.15);
+    gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
 
-        // New simplified implementation using playTone
-        // this.playTone(440, 'square', 0.1);
-        // this.playTone(220, 'sawtooth', 0.1, 0.05);
-    };
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.15);
+  };
 
-    playExplosion = () => {
-        if (!this.ctx || !this.masterGain) return;
-        this.resume();
+  playExplosion = () => {
+    if (!this.ctx || !this.masterGain || this.isMuted) {
+      return;
+    }
 
-        // White Noise for Explosion
-        const bufferSize = this.ctx.sampleRate * 0.5; // 0.5s duration
-        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-        const data = buffer.getChannelData(0);
+    this.resume();
 
-        for (let i = 0; i < bufferSize; i++) {
-            data[i] = Math.random() * 2 - 1;
-        }
+    const bufferSize = this.ctx.sampleRate * 0.5;
+    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
 
-        const noise = this.ctx.createBufferSource();
-        noise.buffer = buffer;
+    for (let i = 0; i < bufferSize; i += 1) {
+      data[i] = Math.random() * 2 - 1;
+    }
 
-        const gain = this.ctx.createGain();
-        noise.connect(gain);
-        gain.connect(this.masterGain);
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = buffer;
 
-        gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.5);
+    const gain = this.ctx.createGain();
+    const filter = this.ctx.createBiquadFilter();
 
-        // Lowpass filter to make it "boomy"
-        const filter = this.ctx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.value = 1000;
-        noise.disconnect();
-        noise.connect(filter);
-        filter.connect(gain);
+    filter.type = 'lowpass';
+    filter.frequency.value = 1000;
 
-        noise.start();
-    };
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.masterGain);
 
-    playHit = () => {
-        if (!this.ctx || !this.masterGain) return;
-        this.resume();
+    gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.5);
 
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
+    noise.start();
+  };
 
-        osc.connect(gain);
-        gain.connect(this.masterGain);
+  playHit = () => {
+    if (!this.ctx || !this.masterGain || this.isMuted) {
+      return;
+    }
 
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(150, this.ctx.currentTime);
-        osc.frequency.linearRampToValueAtTime(100, this.ctx.currentTime + 0.1);
+    this.resume();
 
-        gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
-        gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
 
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.1);
-    };
+    osc.connect(gain);
+    gain.connect(this.masterGain);
 
-    playPowerUp = () => {
-        this.playTone(660, 'sine', 0.3);
-        this.playTone(880, 'sine', 0.3, 0.1);
-    };
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+    osc.frequency.linearRampToValueAtTime(100, this.ctx.currentTime + 0.1);
 
-    // --- MUSIC (Simple Loop) ---
-    // A simple bassline loop
-    startMusic = () => {
-        if (!this.ctx || !this.masterGain || this.musicOscillators.length > 0) return;
-        this.resume();
+    gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
 
-        const bpm = 120;
-        const beatDur = 60 / bpm;
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.1);
+  };
 
-        // Simple Bass Sequence
-        const notes = [110, 110, 130, 110, 97, 97, 110, 130]; // Hz frequencies
-        let noteIndex = 0;
+  playPowerUp = () => {
+    this.playTone(660, 'sine', 0.3);
+    this.playTone(880, 'sine', 0.3, 0.1);
+  };
 
-        const playNextNote = () => {
-            if (!this.ctx || !this.masterGain) return;
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
+  private playMusicStep = () => {
+    if (!this.ctx || !this.masterGain || this.isMuted) {
+      return;
+    }
 
-            osc.connect(gain);
-            gain.connect(this.masterGain);
+    const bpm = 120;
+    const beatDur = 60 / bpm;
 
-            osc.type = 'triangle';
-            osc.frequency.value = notes[noteIndex];
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
 
-            gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + beatDur - 0.05);
+    osc.connect(gain);
+    gain.connect(this.masterGain);
 
-            osc.start();
-            osc.stop(this.ctx.currentTime + beatDur);
+    osc.type = 'triangle';
+    osc.frequency.value = this.notes[this.musicNoteIndex];
 
-            noteIndex = (noteIndex + 1) % notes.length;
+    gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + beatDur - 0.05);
 
-            // Schedule next loop
-            setTimeout(playNextNote, beatDur * 1000);
-        };
+    osc.start();
+    osc.stop(this.ctx.currentTime + beatDur);
 
-        playNextNote();
-    };
+    this.musicNoteIndex = (this.musicNoteIndex + 1) % this.notes.length;
+  };
+
+  startMusic = () => {
+    if (!this.ctx || !this.masterGain || this.musicIntervalId !== null || this.isMuted) {
+      return;
+    }
+
+    this.resume();
+
+    const bpm = 120;
+    const beatDurMs = (60 / bpm) * 1000;
+
+    this.playMusicStep();
+    this.musicIntervalId = window.setInterval(this.playMusicStep, beatDurMs);
+  };
+
+  stopMusic = () => {
+    if (this.musicIntervalId !== null) {
+      window.clearInterval(this.musicIntervalId);
+      this.musicIntervalId = null;
+    }
+
+    this.musicNoteIndex = 0;
+  };
 }
 
 export const audioManager = new AudioController();

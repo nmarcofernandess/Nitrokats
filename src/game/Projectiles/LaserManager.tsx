@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Vector3, Group } from 'three';
+import { Euler, Group, Vector3 } from 'three';
 import { useGameStore } from '../store';
 import { audioManager } from '../Utils/AudioManager';
 import { checkCircleCollision } from '../Utils/CollisionUtils';
@@ -10,97 +10,102 @@ import { GameBalance } from '../Utils/GameBalance';
 const LASER_SPEED = 20;
 const MAX_DISTANCE = 100;
 
-const Laser = ({ id, position, rotation, source }: { id: string; position: Vector3; rotation: any; source: 'player' | 'enemy' }) => {
-    const ref = useRef<Group>(null);
-    const removeLaser = useGameStore((state) => state.removeLaser);
-    const targets = useGameStore((state) => state.targets);
-    const removeTarget = useGameStore((state) => state.removeTarget);
-    const addParticle = useGameStore((state) => state.addParticle);
-    const spawnPowerUp = useGameStore((state) => state.spawnPowerUp);
-    const incrementKills = useGameStore((state) => state.incrementKills);
-    const removeEnemy = useGameStore((state) => state.removeEnemy);
-    const addScore = useGameStore((state) => state.addScore);
-    const takeDamage = useGameStore((state) => state.takeDamage);
-    const wave = useGameStore((state) => state.wave);
-    const isPaused = useGameStore((state) => state.isPaused);
+interface LaserProps {
+  id: string;
+  position: Vector3;
+  rotation: Euler;
+  source: 'player' | 'enemy';
+}
 
-    // Damage Logic using GameBalance
-    const getEnemyDamage = () => GameBalance.getDamageForWave(wave);
-    const startPos = useRef(position.clone());
+const Laser = ({ id, position, rotation, source }: LaserProps) => {
+  const ref = useRef<Group>(null);
+  const startPos = useRef(position.clone());
 
-    useFrame((_, delta) => {
-        if (!ref.current) return;
-        // Respect pause state
-        if (isPaused) return;
+  useFrame((_, delta) => {
+    if (!ref.current) {
+      return;
+    }
 
-        // Move forward in local Z (or whatever direction the tank was facing)
-        ref.current.translateZ(LASER_SPEED * delta);
+    const game = useGameStore.getState();
+    if (game.gameState !== 'playing' || game.isPaused) {
+      return;
+    }
 
-        // Check distance
-        if (ref.current.position.distanceTo(startPos.current) > MAX_DISTANCE) {
-            removeLaser(id);
-            return;
+    ref.current.translateZ(LASER_SPEED * delta);
+
+    if (ref.current.position.distanceTo(startPos.current) > MAX_DISTANCE) {
+      game.removeLaser(id);
+      return;
+    }
+
+    for (const target of game.targets) {
+      if (!checkCircleCollision(ref.current.position, 0.5, target.position, 1.0)) {
+        continue;
+      }
+
+      game.removeTarget(target.id);
+      game.removeLaser(id);
+      game.addParticle(target.position, '#ff0000', 10);
+      return;
+    }
+
+    if (source === 'player') {
+      const enemies = gameRegistry.getEnemies();
+      for (const enemy of enemies) {
+        if (ref.current.position.distanceTo(enemy.ref.position) >= 1.5) {
+          continue;
         }
 
-        // Check collision with targets
-        for (const target of targets) {
-            // Use 2D collision to ignore height differences (laser might be higher than block)
-            if (checkCircleCollision(ref.current.position, 0.5, target.position, 1.0)) {
-                removeTarget(target.id);
-                removeLaser(id);
-                addParticle(target.position, '#ff0000', 10);
-                break;
-            }
+        game.removeLaser(id);
+
+        const enemyKilled = game.damageEnemy(
+          enemy.id,
+          GameBalance.getPlayerDamageForWave(game.wave),
+        );
+
+        if (enemyKilled) {
+          game.addScore(100);
+          game.incrementKills();
+          game.addParticle(enemy.ref.position.clone(), '#ff00ff', 15);
+          game.spawnPowerUp(enemy.ref.position.clone());
+          audioManager.playExplosion();
+        } else {
+          game.addParticle(enemy.ref.position.clone(), '#ff00ff', 4);
         }
 
-        // PLAYER LASERS hit ENEMIES (use gameRegistry for real-time positions!)
-        if (source === 'player') {
-            const enemies = gameRegistry.getEnemies();
-            for (const enemy of enemies) {
-                // Use the actual THREE.js ref position, not store position
-                if (ref.current.position.distanceTo(enemy.ref.position) < 1.5) {
-                    removeEnemy(enemy.id);
-                    removeLaser(id);
-                    addScore(100);
-                    incrementKills();
-                    addParticle(enemy.ref.position.clone(), '#ff00ff', 15);
-                    audioManager.playExplosion();
-                    spawnPowerUp(enemy.ref.position.clone());
-                    break;
-                }
-            }
-        }
+        return;
+      }
+    }
 
-        // ENEMY LASERS hit PLAYER (use gameRegistry for real-time position!)
-        if (source === 'enemy') {
-            const playerPos = gameRegistry.getPlayerPosition();
-            if (playerPos && checkCircleCollision(ref.current.position, 0.5, playerPos, 1.5)) {
-                takeDamage(getEnemyDamage());
-                removeLaser(id);
-                addParticle(ref.current.position, '#00ffff', 5);
-                audioManager.playHit();
-            }
-        }
-    });
+    if (source === 'enemy') {
+      const playerPos = gameRegistry.getPlayerPosition();
+      if (playerPos && checkCircleCollision(ref.current.position, 0.5, playerPos, 1.5)) {
+        game.takeDamage(GameBalance.getDamageForWave(game.wave));
+        game.removeLaser(id);
+        game.addParticle(ref.current.position.clone(), '#00ffff', 5);
+        audioManager.playHit();
+      }
+    }
+  });
 
-    return (
-        <group ref={ref} position={position} rotation={rotation}>
-            <mesh rotation={[Math.PI / 2, 0, 0]}>
-                <cylinderGeometry args={[0.05, 0.05, 1]} />
-                <meshStandardMaterial color="#ff00ff" emissive="#ff00ff" emissiveIntensity={5} toneMapped={false} />
-            </mesh>
-            {/* Removed PointLight for performance */}
-        </group>
-    );
+  return (
+    <group ref={ref} position={position} rotation={rotation}>
+      <mesh rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.05, 0.05, 1]} />
+        <meshStandardMaterial color="#ff00ff" emissive="#ff00ff" emissiveIntensity={5} toneMapped={false} />
+      </mesh>
+    </group>
+  );
 };
 
 export const LaserManager = () => {
-    const lasers = useGameStore((state) => state.lasers);
-    return (
-        <>
-            {lasers.map((laser) => (
-                <Laser key={laser.id} {...laser} />
-            ))}
-        </>
-    );
+  const lasers = useGameStore((state) => state.lasers);
+
+  return (
+    <>
+      {lasers.map((laser) => (
+        <Laser key={laser.id} {...laser} />
+      ))}
+    </>
+  );
 };
