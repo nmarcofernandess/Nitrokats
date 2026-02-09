@@ -46,6 +46,10 @@ class GameRegistry {
     return this.player ? this.player.position : null;
   }
 
+  getPlayer(): Group | null {
+    return this.player;
+  }
+
   getEnemies(): RegisteredObject[] {
     return Array.from(this.enemies.values());
   }

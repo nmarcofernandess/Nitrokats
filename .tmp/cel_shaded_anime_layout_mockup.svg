@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e3b5a"/>
+      <stop offset="40%" stop-color="#2f5d86"/>
+      <stop offset="100%" stop-color="#3c77a3"/>
+    </linearGradient>
+    <style>
+      .outline { stroke:#111827; stroke-width:4; stroke-linejoin:round; stroke-linecap:round; }
+      .ui { fill:#111927; stroke:#e6f0ff; stroke-width:3; }
+      .ui2 { fill:#253046; stroke:#9fc5ff; stroke-width:2; }
+      .txt { fill:#f7fbff; font-family:'Trebuchet MS',sans-serif; }
+    </style>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#sky)"/>
+
+  <polygon points="0,540 120,450 260,540 420,440 620,540 790,430 980,540 1160,450 1320,540 1490,430 1600,540 1600,900 0,900" fill="#25415f"/>
+  <polygon points="0,600 160,500 340,600 510,500 760,600 900,500 1150,600 1300,500 1520,600 1600,600 1600,900 0,900" fill="#1f3650"/>
+
+  <rect x="0" y="640" width="1600" height="260" fill="#5c8c54"/>
+  <rect x="0" y="700" width="1600" height="200" fill="#4a7b45"/>
+  <rect x="0" y="760" width="1600" height="140" fill="#3f6c3b"/>
+
+  <polygon class="outline" points="580,900 760,620 840,620 1020,900" fill="#8f6a4a"/>
+  <line x1="620" y1="850" x2="980" y2="850" stroke="#6e4e36" stroke-width="3"/>
+  <line x1="650" y1="800" x2="950" y2="800" stroke="#6e4e36" stroke-width="3"/>
+  <line x1="680" y1="750" x2="920" y2="750" stroke="#6e4e36" stroke-width="3"/>
+  <line x1="710" y1="700" x2="890" y2="700" stroke="#6e4e36" stroke-width="3"/>
+
+  <polygon class="outline" points="750,520 910,430 1070,520" fill="#cc4a4a"/>
+  <polygon class="outline" points="770,520 910,455 1050,520" fill="#e35f5f"/>
+  <rect class="outline" x="780" y="520" width="260" height="170" fill="#f6efe2"/>
+  <rect class="outline" x="830" y="590" width="40" height="100" fill="#7a4f34"/>
+  <rect class="outline" x="915" y="590" width="40" height="100" fill="#7a4f34"/>
+  <rect class="outline" x="800" y="555" width="35" height="30" fill="#7fc3ef"/>
+  <rect class="outline" x="970" y="555" width="35" height="30" fill="#7fc3ef"/>
+
+  <g>
+    <rect class="outline" x="420" y="600" width="20" height="90" fill="#6d3f2d"/>
+    <ellipse class="outline" cx="430" cy="585" rx="50" ry="45" fill="#5db15d"/>
+    <ellipse class="outline" cx="430" cy="540" rx="40" ry="35" fill="#70c76b"/>
+
+    <rect class="outline" x="1150" y="600" width="20" height="90" fill="#6d3f2d"/>
+    <ellipse class="outline" cx="1160" cy="585" rx="50" ry="45" fill="#5db15d"/>
+    <ellipse class="outline" cx="1160" cy="540" rx="40" ry="35" fill="#70c76b"/>
+  </g>
+
+  <g>
+    <polygon class="outline" points="560,720 640,730 625,840 545,835" fill="#2c3e73"/>
+    <polygon class="outline" points="635,740 690,775 650,850 620,815" fill="#dd5757"/>
+    <ellipse class="outline" cx="585" cy="700" rx="35" ry="35" fill="#f1c29d"/>
+    <polygon class="outline" points="555,695 585,650 620,690 605,718 565,715" fill="#253046"/>
+    <polygon class="outline" points="648,742 730,690 740,700 658,752" fill="#b9d5e5"/>
+  </g>
+
+  <rect class="ui" x="40" y="24" width="1520" height="68" rx="16"/>
+  <rect class="ui2" x="65" y="40" width="355" height="36" rx="10"/>
+  <rect x="83" y="48" width="192" height="20" rx="8" fill="#e34b5a"/>
+  <rect x="280" y="48" width="120" height="20" rx="8" fill="#4e8be8"/>
+
+  <rect class="ui2" x="980" y="40" width="160" height="36" rx="8"/>
+  <rect class="ui2" x="1160" y="40" width="160" height="36" rx="8"/>
+  <rect class="ui2" x="1340" y="40" width="160" height="36" rx="8"/>
+
+  <rect class="ui" x="1280" y="110" width="265" height="250" rx="14"/>
+  <rect x="1300" y="130" width="225" height="210" fill="#3f6c3b" stroke="#e6f0ff" stroke-width="2"/>
+  <line x1="1330" y1="190" x2="1470" y2="190" stroke="#8f6a4a" stroke-width="5"/>
+  <line x1="1410" y1="145" x2="1410" y2="320" stroke="#8f6a4a" stroke-width="5"/>
+  <circle cx="1410" cy="240" r="11" fill="#e34b5a" stroke="#1d222a" stroke-width="2"/>
+
+  <rect class="ui" x="40" y="110" width="390" height="205" rx="14"/>
+  <rect x="62" y="150" width="338" height="24" rx="7" fill="#253046"/>
+  <rect x="62" y="185" width="338" height="24" rx="7" fill="#253046"/>
+  <rect x="62" y="220" width="338" height="24" rx="7" fill="#253046"/>
+  <rect x="62" y="255" width="338" height="24" rx="7" fill="#253046"/>
+
+  <rect class="ui" x="360" y="790" width="880" height="85" rx="18"/>
+  <g>
+    <rect class="ui2" x="390" y="810" width="66" height="50" rx="10"/>
+    <rect class="ui2" x="472" y="810" width="66" height="50" rx="10"/>
+    <rect class="ui2" x="554" y="810" width="66" height="50" rx="10"/>
+    <rect class="ui2" x="636" y="810" width="66" height="50" rx="10"/>
+    <rect class="ui2" x="718" y="810" width="66" height="50" rx="10"/>
+    <rect class="ui2" x="800" y="810" width="66" height="50" rx="10"/>
+    <rect class="ui2" x="882" y="810" width="66" height="50" rx="10"/>
+    <rect class="ui2" x="964" y="810" width="66" height="50" rx="10"/>
+    <rect class="ui2" x="1046" y="810" width="66" height="50" rx="10"/>
+    <rect class="ui2" x="1128" y="810" width="66" height="50" rx="10"/>
+  </g>
+
+  <rect class="ui" x="40" y="740" width="150" height="130" rx="20"/>
+  <circle class="ui2" cx="115" cy="815" r="43"/>
+
+  <rect class="ui" x="1410" y="720" width="140" height="150" rx="20"/>
+  <rect class="ui2" x="1430" y="742" width="100" height="30" rx="8"/>
+  <rect class="ui2" x="1430" y="782" width="100" height="30" rx="8"/>
+  <rect class="ui2" x="1430" y="822" width="100" height="30" rx="8"/>
+
+  <text class="txt" x="72" y="64" font-size="24" font-weight="700">HP / MP</text>
+  <text class="txt" x="990" y="64" font-size="20">G 12,480</text>
+  <text class="txt" x="1168" y="64" font-size="20">GEMS 128</text>
+  <text class="txt" x="1350" y="64" font-size="20">LV 27</text>
+  <text class="txt" x="72" y="138" font-size="24" font-weight="700">QUESTS</text>
+  <text class="txt" x="1310" y="138" font-size="24" font-weight="700">MINIMAP</text>
+  <text class="txt" x="515" y="62" font-size="24" font-weight="700">CELESTIAL BLADE - CEL SHADED ANIME LAYOUT</text>
+
+  <rect x="2" y="2" width="1596" height="896" fill="none" stroke="#0b1118" stroke-width="4"/>
+</svg>

@@ -1,25 +1,36 @@
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Euler, Group, Vector3 } from 'three';
+import { Group } from 'three';
 import { useGameStore } from '../store';
 import { audioManager } from '../Utils/AudioManager';
 import { checkCircleCollision } from '../Utils/CollisionUtils';
 import { gameRegistry } from '../Utils/ObjectRegistry';
-import { GameBalance } from '../Utils/GameBalance';
+import { RUN_PERK_CONFIG } from '../config/perks';
+import { WEAPON_CONFIG } from '../config/weapons';
+import type { EnemyData, LaserData } from '../types';
 
-const LASER_SPEED = 20;
-const MAX_DISTANCE = 100;
+const PLAYER_HIT_RADIUS = 1.25;
+const ENEMY_HIT_RADIUS = 1.4;
 
 interface LaserProps {
-  id: string;
-  position: Vector3;
-  rotation: Euler;
-  source: 'player' | 'enemy';
+  laser: LaserData;
 }
 
-const Laser = ({ id, position, rotation, source }: LaserProps) => {
+const resolveKillReward = (enemy: EnemyData | undefined) => {
+  if (!enemy) {
+    return 100;
+  }
+
+  if (enemy.archetype === 'miniboss_mechacat') {
+    return 1200;
+  }
+
+  return enemy.isElite ? 350 : 120;
+};
+
+const Laser = ({ laser }: LaserProps) => {
   const ref = useRef<Group>(null);
-  const startPos = useRef(position.clone());
+  const lifeRef = useRef(laser.life);
 
   useFrame((_, delta) => {
     if (!ref.current) {
@@ -31,10 +42,11 @@ const Laser = ({ id, position, rotation, source }: LaserProps) => {
       return;
     }
 
-    ref.current.translateZ(LASER_SPEED * delta);
+    ref.current.position.addScaledVector(laser.direction, laser.speed * delta);
+    lifeRef.current -= delta;
 
-    if (ref.current.position.distanceTo(startPos.current) > MAX_DISTANCE) {
-      game.removeLaser(id);
+    if (lifeRef.current <= 0) {
+      game.removeLaser(laser.id);
       return;
     }
 
@@ -44,55 +56,116 @@ const Laser = ({ id, position, rotation, source }: LaserProps) => {
       }
 
       game.removeTarget(target.id);
-      game.removeLaser(id);
+      game.removeLaser(laser.id);
       game.addParticle(target.position, '#ff0000', 10);
       return;
     }
 
-    if (source === 'player') {
+    if (laser.source === 'player') {
       const enemies = gameRegistry.getEnemies();
       for (const enemy of enemies) {
-        if (ref.current.position.distanceTo(enemy.ref.position) >= 1.5) {
+        if (ref.current.position.distanceTo(enemy.ref.position) > ENEMY_HIT_RADIUS) {
           continue;
         }
 
-        game.removeLaser(id);
+        const enemyBeforeHit = game.enemies.find((entry) => entry.id === enemy.id);
 
-        const enemyKilled = game.damageEnemy(
-          enemy.id,
-          GameBalance.getPlayerDamageForWave(game.wave),
-        );
+        game.removeLaser(laser.id);
+        game.pushGameEvent({
+          type: 'hit',
+          payload: {
+            weapon: laser.sourceWeapon,
+            x: ref.current.position.x,
+            z: ref.current.position.z,
+          },
+        });
+
+        const enemyKilled = game.damageEnemy(enemy.id, laser.damage);
+
+        const lifeSteal = game.runPerks.includes('vampiric_rounds')
+          ? RUN_PERK_CONFIG.vampiric_rounds.modifiers.lifeSteal ?? 0
+          : 0;
+
+        if (lifeSteal > 0) {
+          game.heal(laser.damage * lifeSteal * 2.8);
+        }
+
+        if (game.runPerks.includes('shockwave')) {
+          const splashDamage = RUN_PERK_CONFIG.shockwave.modifiers.splashDamage ?? 0;
+
+          if (splashDamage > 0) {
+            for (const nearby of gameRegistry.getEnemies()) {
+              if (nearby.id === enemy.id) {
+                continue;
+              }
+
+              if (nearby.ref.position.distanceTo(enemy.ref.position) <= 2.2) {
+                game.damageEnemy(nearby.id, splashDamage);
+              }
+            }
+          }
+        }
 
         if (enemyKilled) {
-          game.addScore(100);
+          game.addScore(resolveKillReward(enemyBeforeHit));
           game.incrementKills();
-          game.addParticle(enemy.ref.position.clone(), '#ff00ff', 15);
+          game.incrementWaveKills();
+          game.addParticle(enemy.ref.position.clone(), '#ff88ff', 18);
           game.spawnPowerUp(enemy.ref.position.clone());
+          game.pushGameEvent({
+            type: 'kill',
+            payload: {
+              archetype: enemyBeforeHit?.archetype ?? 'unknown',
+              x: enemy.ref.position.x,
+              z: enemy.ref.position.z,
+            },
+          });
           audioManager.playExplosion();
         } else {
-          game.addParticle(enemy.ref.position.clone(), '#ff00ff', 4);
+          game.addParticle(enemy.ref.position.clone(), '#b284ff', 6);
         }
 
         return;
       }
     }
 
-    if (source === 'enemy') {
+    if (laser.source === 'enemy') {
       const playerPos = gameRegistry.getPlayerPosition();
-      if (playerPos && checkCircleCollision(ref.current.position, 0.5, playerPos, 1.5)) {
-        game.takeDamage(GameBalance.getDamageForWave(game.wave));
-        game.removeLaser(id);
-        game.addParticle(ref.current.position.clone(), '#00ffff', 5);
-        audioManager.playHit();
+      if (!playerPos || !checkCircleCollision(ref.current.position, 0.45, playerPos, PLAYER_HIT_RADIUS)) {
+        return;
       }
+
+      game.takeDamage(laser.damage);
+      game.removeLaser(laser.id);
+      game.addParticle(ref.current.position.clone(), '#ff6d6d', 10);
+      game.pushGameEvent({
+        type: 'damage_taken',
+        payload: {
+          x: ref.current.position.x,
+          z: ref.current.position.z,
+        },
+      });
+      audioManager.playHit();
     }
   });
 
+  const laserColor =
+    laser.source === 'enemy'
+      ? '#ff5b5b'
+      : laser.sourceWeapon === 'enemy'
+        ? '#ff5b5b'
+        : WEAPON_CONFIG[laser.sourceWeapon].color;
+
   return (
-    <group ref={ref} position={position} rotation={rotation}>
+    <group ref={ref} position={laser.position} rotation={laser.rotation}>
       <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.05, 0.05, 1]} />
-        <meshStandardMaterial color="#ff00ff" emissive="#ff00ff" emissiveIntensity={5} toneMapped={false} />
+        <cylinderGeometry args={[0.045, 0.045, 1.1, 10]} />
+        <meshStandardMaterial
+          color={laserColor}
+          emissive={laserColor}
+          emissiveIntensity={3.5}
+          toneMapped={false}
+        />
       </mesh>
     </group>
   );
@@ -104,7 +177,7 @@ export const LaserManager = () => {
   return (
     <>
       {lasers.map((laser) => (
-        <Laser key={laser.id} {...laser} />
+        <Laser key={laser.id} laser={laser} />
       ))}
     </>
   );
