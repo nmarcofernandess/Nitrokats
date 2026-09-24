@@ -10,6 +10,7 @@ import { Hud } from './ui/Hud';
 import { Lobby } from './ui/Lobby';
 import { PauseMenu } from './ui/PauseMenu';
 import { useUiStore, type LobbyPlayer, type RuntimeSnapshot } from './ui/uiStore';
+import { createTestBridge } from './testing/TestBridge';
 
 export function GameApp({ onBack }: { onBack: () => void }) {
   const [screen, setScreen] = useState<'home' | 'lobby' | 'game' | 'options'>('home');
@@ -106,10 +107,13 @@ function GameSession({ players, mode, difficulty, trainingBot, onBackToLobby }: 
     };
     const session = new GameRuntime(config, input, { trainingBot });
     if (mode === 'training') spawnTrainingTargets(session.world);
+    const testBridge = import.meta.env.MODE === 'e2e' ? createTestBridge(session) : null;
+    if (testBridge) window.__nitrokatsTest = testBridge;
     let active = true;
     queueMicrotask(() => { if (active) setRuntime(session); });
     return () => {
       active = false;
+      if (testBridge && window.__nitrokatsTest === testBridge) delete window.__nitrokatsTest;
       session.dispose();
       useUiStore.getState().clearRuntimeSnapshot();
     };

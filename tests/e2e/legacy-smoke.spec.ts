@@ -8,7 +8,7 @@ test('a base ainda abre um único canvas @smoke', async ({ page }, testInfo) => 
     if (message.type() === 'error') consoleErrors.push(message.text());
   });
 
-  await page.goto('/');
+  await page.goto('/?edition=legacy');
   await expect(page.locator('canvas')).toHaveCount(1);
   await expect(page.getByRole('heading', { name: 'CATZ COMBIES' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Play Tank' })).toBeVisible();

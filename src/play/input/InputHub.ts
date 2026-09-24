@@ -68,6 +68,7 @@ export class InputHub {
   private readonly previousMenu = new Map<PlayerId, Record<MenuEdge, boolean>>();
   private readonly pendingMenu = new Map<PlayerId, Record<MenuEdge, boolean>>();
   private readonly frames = new Map<PlayerId, PlayerInput>();
+  private readonly virtualFrames = new Map<PlayerId, PlayerInput>();
   private readonly lastAim = new Map<PlayerId, { x: number; z: number }>();
   private readonly menuCommands = new Map<PlayerId, MenuCommand>();
   private readonly pressedKeys = new Set<string>();
@@ -249,12 +250,24 @@ export class InputHub {
     const frame: InputFrame = {};
     for (const slot of PLAYER_IDS) {
       const current = this.frames.get(slot);
-      if (!current) continue;
+      const virtual = this.virtualFrames.get(slot);
+      if (!current && !virtual) continue;
       const pending = this.pendingActions.get(slot) ?? { dash: false, nextWeapon: false };
-      frame[slot] = { ...current, dash: pending.dash, nextWeapon: pending.nextWeapon };
+      frame[slot] = {
+        ...(current ?? EMPTY_INPUT),
+        ...virtual,
+        dash: virtual?.dash ?? pending.dash,
+        nextWeapon: virtual?.nextWeapon ?? pending.nextWeapon,
+      };
       this.pendingActions.set(slot, { dash: false, nextWeapon: false });
     }
     return frame;
+  }
+
+  /** Injects a normalized command at the hardware boundary for isolated runtime proofs. */
+  setVirtualInput(slot: PlayerId, command: Partial<PlayerInput>): void {
+    this.assertLive();
+    this.virtualFrames.set(slot, { ...EMPTY_INPUT, ...command });
   }
 
   consumeMenuCommands(): Partial<Record<PlayerId, MenuCommand>> {
@@ -291,6 +304,7 @@ export class InputHub {
     this.pressedKeys.clear();
     this.pressedMouseButtons.clear();
     this.frames.clear();
+    this.virtualFrames.clear();
     this.menuCommands.clear();
     for (const slot of PLAYER_IDS) this.clearPendingForSlot(slot);
     this.previousActions.clear();

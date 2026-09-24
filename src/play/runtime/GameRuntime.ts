@@ -1,4 +1,4 @@
-import type { GameEvent, InputFrame, PlayerId, RunConfig, Vec2, World } from '../core/model';
+import type { GameEvent, InputFrame, PlayerId, PlayerInput, RunConfig, Vec2, World } from '../core/model';
 import { createClock, type SimulationClock } from '../core/clock';
 import { pauseWorld, resumeWorld } from '../core/lifecycle';
 import { stepWorld } from '../core/step';
@@ -18,6 +18,7 @@ export interface RuntimeInputHub {
   setPauseHandler(handler: (reason: 'device-disconnected' | 'focus-lost') => void): void;
   confirmResume(): boolean;
   getBinding?(slot: PlayerId): DeviceBinding | null;
+  setVirtualInput?(slot: PlayerId, command: Partial<PlayerInput>): void;
 }
 
 type RuntimeInput = InputProvider | RuntimeInputHub;
@@ -98,6 +99,11 @@ export class GameRuntime {
 
   restart(): void {
     this.start(this.runConfig);
+  }
+
+  setVirtualInput(slot: PlayerId, command: Partial<PlayerInput>): void {
+    if (this.disposed || typeof this.inputProvider === 'function' || !this.inputProvider.setVirtualInput) return;
+    this.inputProvider.setVirtualInput(slot, command);
   }
 
   /** A visible training-only tutorial action, routed through the combat damage rules. */

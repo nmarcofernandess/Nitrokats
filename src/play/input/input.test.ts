@@ -237,6 +237,34 @@ describe('InputHub', () => {
     hub.dispose();
   });
 
+  it('injects test commands only through the input boundary and resets them with the runtime session', () => {
+    const { hub } = harness();
+    hub.assign('p1', { type: 'keyboard-shared', profile: 'p1' });
+    hub.assign('p2', { type: 'keyboard-shared', profile: 'p2' });
+    const runtime = new GameRuntime({
+      seed: 9, mode: 'training', difficulty: 'normal',
+      players: [
+        { id: 'p1', catId: 'anakin', weaponId: 'pulse_rifle' },
+        { id: 'p2', catId: 'yang', weaponId: 'pulse_rifle' },
+      ],
+    }, hub);
+    const p1Before = { ...runtime.world.players[0]!.position };
+    const p2Before = { ...runtime.world.players[1]!.position };
+
+    runtime.setVirtualInput('p1', { move: { x: 1, z: 0 } });
+    for (let tick = 0; tick < 30; tick += 1) runtime.advance(1 / 60);
+    expect(runtime.world.players[0]!.position.x).toBeGreaterThan(p1Before.x);
+    expect(runtime.world.players[1]!.position).toEqual(p2Before);
+
+    runtime.pause();
+    runtime.resume();
+    runtime.advance(1 / 60);
+    expect(hub.consumeFrame().p1).toMatchObject({
+      move: { x: 0, z: 0 }, fire: false, dash: false, revive: false, nextWeapon: false,
+    });
+    runtime.dispose();
+  });
+
   it('does not accept a visibility loss as a resume and suppresses pre-loss keys after focus returns', () => {
     let visible = true;
     const { hub, pause, target } = harness([], { isVisible: () => visible });
