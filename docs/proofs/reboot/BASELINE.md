@@ -11,7 +11,10 @@
 
 `src/App.tsx` já apontava para a edição preservada em `src/game/Scene.tsx` e `src/game/UI.tsx`. A tela inicial apresentava os modos `Play Tank` e `Play Zombie`; os controles informados na tela eram WASD para mover, botão esquerdo do mouse para atirar, mouse para mirar, ESC para pausar e clique para capturar o mouse. T01 manteve esse entry point e não tornou a edição Reborn padrão.
 
-## Ambiente e comandos antes das alterações
+## Ambiente e comandos observados durante o baseline
+
+O `npm test` de baseline **antes de criar o spec Playwright não foi executado**. Portanto, não há evidência de um baseline pré-alteração intacto para esse comando. A única execução disponível ocorreu depois de `tests/e2e/legacy-smoke.spec.ts` ter sido criado e antes de Playwright ser instalado; seu resultado abaixo é apenas um estado intermediário contaminado pela descoberta do arquivo E2E pelo Vitest.
+
 
 - Node.js: `v25.6.1`
 - npm: `11.9.0`
@@ -20,7 +23,7 @@
 - `npm run lint`: exit 0.
 - `npm run build`: exit 0; Vite reportou dados Browserslist antigos e chunk Three.js maior que 500 kB.
 
-O `npm test` acima não é apresentado como baseline verde; registra a interferência real causada pelo teste novo antes de configurar a fronteira entre os runners.
+Esse resultado intermediário não deve ser interpretado como teste do estado pré-alteração. Ele registra a interferência causada pelo spec novo antes de configurar a fronteira entre os runners.
 
 ## Limitações observadas
 
