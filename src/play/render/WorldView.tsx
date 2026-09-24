@@ -14,6 +14,7 @@ import {
 } from 'three';
 import type { GameRuntime } from '../runtime/GameRuntime';
 import type { PlayerId, Vec2 } from '../core/model';
+import type { MenuCommand } from '../input/bindings';
 import { SharedCameraController } from './SharedCamera';
 
 const CAT_COLORS: Record<PlayerId, string> = { p1: '#51d8ed', p2: '#ffb64c' };
@@ -133,10 +134,11 @@ function lerpAngle(current: number, target: number, amount: number): number {
 }
 
 /** A projection of the TypeScript world. All positions are written imperatively per render frame. */
-export function WorldView({ runtime, mouseAimBridge, hudBridge }: {
+export function WorldView({ runtime, mouseAimBridge, hudBridge, onMenuCommands }: {
   runtime: GameRuntime;
   mouseAimBridge: MouseAimBridge;
   hudBridge: HudBridge;
+  onMenuCommands?: (commands: Partial<Record<PlayerId, MenuCommand>>) => void;
 }) {
   const { camera, gl, size } = useThree();
   const cameraController = useRef(new SharedCameraController());
@@ -211,11 +213,12 @@ export function WorldView({ runtime, mouseAimBridge, hudBridge }: {
     }
 
     hudBridge.update(world);
+    const wasPaused = runtime.world.phase === 'paused';
     const commands = runtime.menuCommands;
     const pausePressed = Object.values(commands).some(command => command?.pausePressed);
-    const confirmPressed = Object.values(commands).some(command => command?.confirmPressed);
-    if (world.phase === 'playing' && pausePressed) runtime.pause();
-    else if (world.phase === 'paused' && (pausePressed || confirmPressed)) runtime.resume();
+    if (runtime.world.phase === 'playing' && pausePressed) runtime.pause();
+    // The edge that opens pause must not also be interpreted as a menu action.
+    onMenuCommands?.(wasPaused ? commands : {});
     hudBridge.setPaused(runtime.world.phase === 'paused');
   });
 

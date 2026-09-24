@@ -44,6 +44,10 @@ export function applyDamage(
     return { applied, killed };
   }
 
+  if (world.config.mode === 'training' && source.ownerId !== 'training-tutorial') {
+    return { ...NO_DAMAGE };
+  }
+
   const target = world.players.find(player => player.id === targetId);
   if (!target || target.status !== 'active' || target.invulnerableSeconds > 0
     || !Number.isFinite(target.hp) || target.hp <= 0) {

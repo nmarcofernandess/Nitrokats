@@ -2,6 +2,8 @@ import { Component, useEffect, useState, type ReactNode } from 'react';
 import { Canvas } from '@react-three/fiber';
 import type { GameRuntime } from '../runtime/GameRuntime';
 import type { HudBridge, MouseAimBridge } from './WorldView';
+import type { MenuCommand } from '../input/bindings';
+import type { PlayerId } from '../core/model';
 import { WorldView } from './WorldView';
 
 function WebGLFallback({ onBack }: { onBack: () => void }) {
@@ -44,11 +46,12 @@ function canCreateWebGL2Context(): boolean {
   }
 }
 
-export function PlayScene({ runtime, mouseAimBridge, hudBridge, onBack }: {
+export function PlayScene({ runtime, mouseAimBridge, hudBridge, onBack, onMenuCommands }: {
   runtime: GameRuntime;
   mouseAimBridge: MouseAimBridge;
   hudBridge: HudBridge;
   onBack: () => void;
+  onMenuCommands: (commands: Partial<Record<PlayerId, MenuCommand>>) => void;
 }) {
   const [webglAvailable, setWebglAvailable] = useState<boolean | null>(null);
   useEffect(() => {
@@ -71,7 +74,7 @@ export function PlayScene({ runtime, mouseAimBridge, hudBridge, onBack }: {
         fallback={<WebGLFallback onBack={onBack} />}
       >
         <color attach="background" args={['#222d35']} />
-        <WorldView runtime={runtime} mouseAimBridge={mouseAimBridge} hudBridge={hudBridge} />
+        <WorldView runtime={runtime} mouseAimBridge={mouseAimBridge} hudBridge={hudBridge} onMenuCommands={onMenuCommands} />
       </Canvas>
     </SceneErrorBoundary>
   );

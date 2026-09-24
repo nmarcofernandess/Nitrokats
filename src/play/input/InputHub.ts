@@ -311,6 +311,11 @@ export class InputHub {
     return choices.sort((left, right) => left.index - right.index);
   }
 
+  getBinding(slot: PlayerId): DeviceBinding | null {
+    const binding = this.bindings.get(slot);
+    return binding ? { ...binding } : null;
+  }
+
   getDeviceDiagnostics(): { unsupportedGamepadIndexes: number[]; awaitingConfirmation: PlayerId[] } {
     return {
       unsupportedGamepadIndexes: [...this.unsupportedPads].sort((a, b) => a - b),

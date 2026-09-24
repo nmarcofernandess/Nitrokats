@@ -5,7 +5,7 @@ import type { InputFrame, PlayerId, PlayerInput, RunConfig, World } from '../../
 export function makeWorld(patch: Partial<RunConfig> = {}): World {
   return createWorld({
     seed: 42,
-    mode: 'training',
+    mode: 'campaign',
     difficulty: 'normal',
     players: [
       { id: 'p1', catId: 'anakin', weaponId: 'pulse_rifle' },
