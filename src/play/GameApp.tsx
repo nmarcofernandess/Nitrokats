@@ -24,7 +24,6 @@ export function GameApp({ onBack }: { onBack: () => void }) {
   if (screen === 'lobby') {
     return <Lobby initialCount={playerCount} initialMode={initialMode} onBack={() => setScreen('home')} onStart={(selected, mode, selectedDifficulty, useTrainingBot) => {
       setPlayers(selected.map((player) => ({ ...player })));
-      useUiStore.getState().setLobbyPlayers(selected);
       setInitialMode(mode);
       setDifficulty(selectedDifficulty);
       setTrainingBot(useTrainingBot);
