@@ -1,10 +1,22 @@
-import type { GameEvent, InputFrame, RunConfig, World } from '../core/model';
+import type { GameEvent, InputFrame, PlayerId, RunConfig, World } from '../core/model';
 import { createClock, type SimulationClock } from '../core/clock';
 import { pauseWorld, resumeWorld } from '../core/lifecycle';
 import { stepWorld } from '../core/step';
 import { createWorld } from '../core/world';
+import type { MenuCommand } from '../input/bindings';
 
 export type InputProvider = (() => InputFrame) & { clear: () => void };
+
+export interface RuntimeInputHub {
+  poll(): void;
+  consumeFrame(): InputFrame;
+  consumeMenuCommands(): Partial<Record<PlayerId, MenuCommand>>;
+  clear(): void;
+  setPauseHandler(handler: (reason: 'device-disconnected' | 'focus-lost') => void): void;
+  confirmResume(): boolean;
+}
+
+type RuntimeInput = InputProvider | RuntimeInputHub;
 
 const emptyInput: InputProvider = Object.assign(() => ({}), { clear: () => undefined });
 
@@ -14,19 +26,20 @@ function cloneRunConfig(config: RunConfig): RunConfig {
 
 export class GameRuntime {
   world: World;
-  private readonly inputProvider: InputProvider;
+  private readonly inputProvider: RuntimeInput;
   private readonly clock: SimulationClock;
   private runConfig: RunConfig;
   private disposed = false;
   private currentEventBatches: readonly (readonly GameEvent[])[] = Object.freeze([]);
 
-  constructor(config: RunConfig, inputProvider: InputProvider = emptyInput) {
+  constructor(config: RunConfig, inputProvider: RuntimeInput = emptyInput) {
     this.world = createWorld(config);
     this.runConfig = cloneRunConfig(config);
     this.inputProvider = inputProvider;
+    if (typeof inputProvider !== 'function') inputProvider.setPauseHandler(() => this.pause());
     this.clock = createClock(() => {
       if (this.disposed || this.world.phase !== 'playing') return;
-      const tickEvents = stepWorld(this.world, this.inputProvider());
+      const tickEvents = stepWorld(this.world, this.readInputFrame());
       this.currentEventBatches = Object.freeze([
         ...this.currentEventBatches,
         Object.freeze([...tickEvents]),
@@ -49,6 +62,7 @@ export class GameRuntime {
 
   advance(seconds: number): void {
     if (this.disposed) return;
+    if (typeof this.inputProvider !== 'function') this.inputProvider.poll();
     if (this.world.phase !== 'playing') {
       this.clock.reset();
       return;
@@ -66,7 +80,8 @@ export class GameRuntime {
   }
 
   resume(): void {
-    if (this.disposed) return;
+    if (this.disposed || this.world.phase !== 'paused') return;
+    if (typeof this.inputProvider !== 'function' && !this.inputProvider.confirmResume()) return;
     resumeWorld(this.world);
     this.clock.reset();
   }
@@ -80,5 +95,16 @@ export class GameRuntime {
     this.pause();
     this.currentEventBatches = Object.freeze([]);
     this.disposed = true;
+  }
+
+  /** Read by menus only; this command channel never enters stepWorld. */
+  get menuCommands(): Partial<Record<PlayerId, MenuCommand>> {
+    return typeof this.inputProvider === 'function' ? {} : this.inputProvider.consumeMenuCommands();
+  }
+
+  private readInputFrame(): InputFrame {
+    return typeof this.inputProvider === 'function'
+      ? this.inputProvider()
+      : this.inputProvider.consumeFrame();
   }
 }
