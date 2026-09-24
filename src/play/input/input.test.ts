@@ -99,6 +99,23 @@ describe('InputHub', () => {
     hub.dispose();
   });
 
+  it('combines mouse and keyboard P1 with the disjoint shared-keyboard P2 profile', () => {
+    const { hub, target } = harness([], { resolveMouseAim: () => ({ x: 1, z: 1 }) });
+    hub.assign('p1', { type: 'keyboard-mouse' });
+    hub.assign('p2', { type: 'keyboard-shared', profile: 'p2' });
+    target.dispatchEvent(browserEvent('mousemove', { clientX: 820, clientY: 340 }));
+    target.dispatchEvent(browserEvent('mousedown', { button: 0, clientX: 820, clientY: 340 }));
+    target.dispatchEvent(browserEvent('keydown', { code: 'ArrowUp', repeat: false }));
+    target.dispatchEvent(browserEvent('keydown', { code: 'KeyK', repeat: false }));
+    hub.poll();
+    const frame = hub.consumeFrame();
+    expect(frame.p1?.aim.x).toBeCloseTo(Math.SQRT1_2);
+    expect(frame.p1?.aim.z).toBeCloseTo(Math.SQRT1_2);
+    expect(frame.p1?.fire).toBe(true);
+    expect(frame.p2).toMatchObject({ move: { x: 0, z: -1 }, fire: true });
+    hub.dispose();
+  });
+
   it('reports a connected non-standard pad for diagnostics instead of guessing its button layout', () => {
     const nonStandard = { ...pad('custom'), mapping: '' };
     const { hub } = harness([nonStandard]);

@@ -147,8 +147,9 @@ export class InputHub {
       if (binding.type === 'keyboard-mouse' && other.type === 'keyboard-mouse') {
         throw new Error(`teclado/mouse já está atribuído a ${otherSlot}`);
       }
-      if ((binding.type === 'keyboard-shared' && other.type === 'keyboard-mouse')
-        || (binding.type === 'keyboard-mouse' && other.type === 'keyboard-shared')) {
+      const overlapsMouseKeyboard = (binding.type === 'keyboard-shared' && binding.profile === 'p1' && other.type === 'keyboard-mouse')
+        || (binding.type === 'keyboard-mouse' && other.type === 'keyboard-shared' && other.profile === 'p1');
+      if (overlapsMouseKeyboard) {
         throw new Error('teclado compartilhado e teclado/mouse usam teclas sobrepostas');
       }
     }
