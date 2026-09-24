@@ -49,6 +49,7 @@ export interface PlayerState extends PlayerConfig {
   maxHp: number;
   status: 'active' | 'down';
   shotCooldown: number;
+  nextWeaponWasPressed: boolean;
   dashCooldown: number;
   dashRemaining: number;
   dashWasPressed: boolean;
@@ -117,6 +118,7 @@ export interface World {
   bounds: Aabb;
   enemies: EnemyState[];
   projectiles: ProjectileState[];
+  projectileSaturationCount: number;
   stageIndex: number;
   objective: ObjectiveState | null;
   encounter: EncounterState | null;
