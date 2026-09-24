@@ -158,9 +158,12 @@ describe('combate autoritativo', () => {
     while (full.projectiles.length < 256) full.projectiles.push({ ...full.projectiles[0], id: `b:fill:${full.projectiles.length}` });
     expect(stepWeapons(full, { p1: input({ fire: false, nextWeapon: false }) })).toBeUndefined();
     expect(full.projectiles.length).toBe(256);
+    full.events = [];
     player(full, 'p1').shotCooldown = 0;
     stepWeapons(full, { p1: input({ fire: true }) });
     expect(full.projectiles.length).toBe(256);
     expect(full.projectileSaturationCount).toBeGreaterThan(0);
+    expect(full.events.filter(event => event.type === 'shot')).toHaveLength(0);
+    expect(player(full, 'p1').shotCooldown).toBe(0);
   });
 });

@@ -27,14 +27,13 @@ export function stepWeapons(world: World, input: InputFrame): void {
     const aim = normalize(command.aim.x || command.aim.z ? command.aim : player.aim);
     if (Math.hypot(aim.x, aim.z) === 0) continue;
     player.aim = aim;
-    player.shotCooldown = weapon.shotIntervalSeconds;
     const muzzle = logicalMuzzlePosition(player.position, aim);
-    emitGameEvent(world, { type: 'shot', playerId: player.id, position: { ...muzzle } });
-    for (let pellet = 0; pellet < weapon.pelletCount; pellet += 1) {
-      if (world.projectiles.length >= MAX_PROJECTILES) {
-        world.projectileSaturationCount += 1;
-        continue;
-      }
+    const availableSlots = Math.max(0, MAX_PROJECTILES - world.projectiles.length);
+    const acceptedPellets = Math.min(weapon.pelletCount, availableSlots);
+    world.projectileSaturationCount += weapon.pelletCount - acceptedPellets;
+    if (acceptedPellets === 0) continue;
+
+    for (let pellet = 0; pellet < acceptedPellets; pellet += 1) {
       const angle = (nextRandom(world) * 2 - 1) * weapon.spreadAngle;
       const direction = rotate(aim, angle);
       const projectile: ProjectileState = {
@@ -49,6 +48,8 @@ export function stepWeapons(world: World, input: InputFrame): void {
       };
       world.projectiles.push(projectile);
     }
+    player.shotCooldown = weapon.shotIntervalSeconds;
+    emitGameEvent(world, { type: 'shot', playerId: player.id, position: { ...muzzle } });
   }
 }
 
