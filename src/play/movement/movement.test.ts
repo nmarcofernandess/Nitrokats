@@ -70,6 +70,17 @@ describe('movimento autoritativo dos jogadores', () => {
     expect(player(world, 'p1').velocity.x).toBe(8);
   });
 
+  it('permite que um jogador caído se arraste a 1,5 m/s sem usar dash', () => {
+    const world = makeWorld();
+    const downed = player(world, 'p1');
+    downed.position = { x: 0, z: 0 };
+    downed.status = 'down';
+    ticks(world, 60, { p1: input({ move: { x: 1, z: 0 }, dash: true }) });
+    expect(downed.position.x).toBeCloseTo(1.5, 6);
+    expect(downed.velocity.x).toBe(1.5);
+    expect(downed.dashRemaining).toBe(0);
+  });
+
   it('limita o centro do círculo aos limites configurados', () => {
     const world = makeWorld();
     world.bounds = { min: { x: -2, z: -2 }, max: { x: 2, z: 2 } };

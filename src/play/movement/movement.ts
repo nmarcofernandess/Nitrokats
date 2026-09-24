@@ -51,6 +51,18 @@ function constrainToBounds(position: Vec2, velocity: Vec2, world: World): void {
 function stepPlayer(player: PlayerState, frame: InputFrame[PlayerState['id']], world: World): void {
   const command = frame;
   const move = normalized(command?.move ?? { x: 0, z: 0 });
+  if (player.status === 'down') {
+    player.dashWasPressed = command?.dash === true;
+    player.dashRemaining = 0;
+    player.velocity = { x: move.x * 1.5, z: move.z * 1.5 };
+    const moved = slideCircle(player.position, {
+      x: player.velocity.x * STEP_SECONDS,
+      z: player.velocity.z * STEP_SECONDS,
+    }, PLAYER_RADIUS, world.colliders, world.bounds);
+    player.position = moved;
+    constrainToBounds(player.position, player.velocity, world);
+    return;
+  }
   const desired = { x: move.x * MAX_SPEED, z: move.z * MAX_SPEED };
   const dashPressed = command?.dash === true;
   const dashEdge = dashPressed && !player.dashWasPressed;

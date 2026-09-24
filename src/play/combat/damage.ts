@@ -45,7 +45,8 @@ export function applyDamage(
   }
 
   const target = world.players.find(player => player.id === targetId);
-  if (!target || target.status !== 'active' || !Number.isFinite(target.hp) || target.hp <= 0) {
+  if (!target || target.status !== 'active' || target.invulnerableSeconds > 0
+    || !Number.isFinite(target.hp) || target.hp <= 0) {
     return { ...NO_DAMAGE };
   }
   const previousHp = target.hp;

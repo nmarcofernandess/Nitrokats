@@ -2,6 +2,7 @@ import type { GameEvent, InputFrame, World } from './model';
 import { stepMovement } from '../movement/movement';
 import { stepWeapons } from '../combat/weapons';
 import { stepProjectiles } from '../combat/projectiles';
+import { resolveRunOutcome, stepRevive } from '../coop/revive';
 
 const FIXED_STEP_SECONDS = 1 / 60;
 
@@ -14,6 +15,8 @@ export function stepWorld(world: World, input: InputFrame): readonly GameEvent[]
   stepMovement(world, input);
   stepWeapons(world, input);
   stepProjectiles(world);
+  stepRevive(world, input);
+  resolveRunOutcome(world);
   return world.events;
 }
 
