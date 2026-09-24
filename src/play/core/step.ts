@@ -1,4 +1,4 @@
-import type { GameEvent, InputFrame, World } from './model';
+import type { GameEvent, InputFrame, PlayerId, Vec2, World } from './model';
 
 const FIXED_STEP_SECONDS = 1 / 60;
 
@@ -10,4 +10,14 @@ export function stepWorld(world: World, input: InputFrame): readonly GameEvent[]
   world.elapsed = world.tick * FIXED_STEP_SECONDS;
   world.events = [];
   return world.events;
+}
+
+/** Appends a simulation event with a run-local monotonic ID for this tick. */
+export function emitGameEvent(
+  world: World,
+  event: Omit<GameEvent, 'id' | 'tick'> & { playerId?: PlayerId; position?: Vec2 },
+): GameEvent {
+  const created: GameEvent = { ...event, id: world.nextEntityId++, tick: world.tick };
+  world.events = [...world.events, created];
+  return created;
 }
