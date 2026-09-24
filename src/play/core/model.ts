@@ -12,6 +12,11 @@ export interface Vec2 {
   z: number;
 }
 
+export interface Aabb {
+  min: Vec2;
+  max: Vec2;
+}
+
 export interface PlayerInput {
   move: Vec2;
   aim: Vec2;
@@ -46,6 +51,7 @@ export interface PlayerState extends PlayerConfig {
   shotCooldown: number;
   dashCooldown: number;
   dashRemaining: number;
+  dashWasPressed: boolean;
   invulnerableSeconds: number;
   downSeconds: number;
   reviveProgress: number;
@@ -107,6 +113,8 @@ export interface World {
   phase: RunPhase;
   resumePhase: RunPhase | null;
   players: PlayerState[];
+  colliders: Aabb[];
+  bounds: Aabb;
   enemies: EnemyState[];
   projectiles: ProjectileState[];
   stageIndex: number;
