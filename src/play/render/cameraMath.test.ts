@@ -1,5 +1,7 @@
 import { expect, it } from 'vitest';
+import { OrthographicCamera, Vector3 } from 'three';
 import { computeCameraFrame, projectToFrame } from './cameraMath';
+import { SharedCameraController } from './SharedCamera';
 
 it('mantém os dois jogadores dentro da margem útil', () => {
   const points = [{ x: -10, z: -8 }, { x: 10, z: 8 }];
@@ -52,4 +54,29 @@ it('usa a orientação de tela da câmera que olha da diagonal positiva para o c
   expect(towardsArenaRight.y).toBeLessThan(0);
   expect(towardsArenaBack.x).toBeLessThan(0);
   expect(towardsArenaRight.x).toBeGreaterThan(0);
+});
+
+it('abre o zoom no mesmo frame para manter jogadores recém-separados visíveis', () => {
+  const camera = new OrthographicCamera(-8 * (16 / 9), 8 * (16 / 9), 8, -8, 0.1, 100);
+  const controller = new SharedCameraController();
+  const aspect = 16 / 9;
+  controller.update(camera, [{ x: 0, z: 0 }, { x: 0, z: 0 }], aspect, 1 / 60);
+  expect(camera.top).toBe(8);
+
+  const separated = [{ x: -20, z: 0 }, { x: 20, z: 0 }];
+  controller.update(camera, separated, aspect, 0.016);
+
+  for (const point of separated) {
+    const projected = new Vector3(point.x, 0, point.z).project(camera);
+    expect(Math.abs(projected.x)).toBeLessThanOrEqual(0.780001);
+    expect(Math.abs(projected.y)).toBeLessThanOrEqual(0.780001);
+  }
+
+  const shifted = [{ x: 12, z: -3 }, { x: 52, z: -3 }];
+  controller.update(camera, shifted, aspect, 0.016);
+  for (const point of shifted) {
+    const projected = new Vector3(point.x, 0, point.z).project(camera);
+    expect(Math.abs(projected.x)).toBeLessThanOrEqual(0.780001);
+    expect(Math.abs(projected.y)).toBeLessThanOrEqual(0.780001);
+  }
 });

@@ -33,6 +33,9 @@ export class SharedCameraController {
       const zoomRate = safeTargetHalfHeight > this.halfHeight ? OPEN_RATE : CLOSE_RATE;
       const zoomAlpha = 1 - Math.exp(-delta * zoomRate);
       this.halfHeight += (safeTargetHalfHeight - this.halfHeight) * zoomAlpha;
+      // Expansion is a visibility constraint: smoothing may close gradually,
+      // but the applied frame must contain every active player immediately.
+      this.halfHeight = Math.max(this.halfHeight, safeTargetHalfHeight);
     }
 
     const horizontal = CAMERA_DISTANCE * Math.cos(CAMERA_ELEVATION);
