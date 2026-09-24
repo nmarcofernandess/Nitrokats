@@ -1,18 +1,20 @@
 # Nitrokats Reborn: Madrugada de Caos
 
-**Data:** 24/09/2026. **Estado:** proposta de design e contrato de implementação, não implementado nem aprovado por playtest.
+**Data:** 24/09/2026. **Estado:** contrato de implementação revisado após T10; campanha solo ainda não implementada nem aprovada por playtest.
+
+**Ruling de escopo (24/09/2026):** o primeiro release local completo é **solo, com P1**. P2, cooperação, resgate de parceiro, teclado compartilhado e combinações de dois controles ficam para uma fase futura. O código e os recibos de T01–T10 permanecem como histórico verificado, sem exigir sua remoção. Onde um trecho histórico abaixo mencionar P2, a regra deste ruling prevalece para T11–T25 e para o aceite da v1. A edição entregue deve apresentar apenas a jornada solo; nenhuma interface de produção promete dupla antes da fase futura. A reversão consiste em restaurar os gates de P2, rever balanceamento e UI e executar a matriz física/cooperativa antes de anunciar cooperação.
 
 ## 1. Resultado pretendido
 
-Um pequeno jogo completo de ação cooperativa para Marco e Yasmin: abrir, escolher seus gatos, jogar uma campanha curta, ajudar um ao outro, derrotar um chefe e ter vontade de repetir. A entrega não termina em um editor, uma galeria de assets ou um protótipo sem vitória.
+Um pequeno jogo completo de ação solo: abrir, escolher um gato, jogar uma campanha curta, derrotar um chefe, ver o resultado e ter vontade de repetir. A entrega não termina em um editor, uma galeria de assets ou um protótipo sem vitória.
 
-Pedido explícito: reinventar o projeto existente, usar Blender como centro da produção de arte e entregar um plano Superpowers. Premissas adotadas para tornar o plano executável: duas pessoas no mesmo Mac, câmera compartilhada, navegador desktop, cooperação contra inimigos. Jogo online e corrida de kart não foram pedidos de forma inequívoca. O repositório real é um shooter, apesar do nome lembrado como NitroKarts.
+Pedido explícito: reinventar o projeto existente, usar Blender como centro da produção de arte e entregar um plano Superpowers. A primeira proposta considerava duas pessoas no mesmo Mac; Marco redefiniu a prioridade para concluir o jogo solo antes de adicionar P2. O alvo continua sendo navegador desktop local. Jogo online e corrida de kart não foram pedidos de forma inequívoca. O repositório real é um shooter, apesar do nome lembrado como NitroKarts.
 
 ### Decisão de gênero e câmera
 
-**Proposta escolhida:** shooter cooperativo isométrico de gatos em microveículos de combate, com movimentação livre e mira independente. Preserva a identidade do tanque-gato original e reaproveita armas, conceitos de objetivos e perks da branch de terceira pessoa.
+**Proposta escolhida:** shooter isométrico solo de gatos em microveículos de combate, com movimentação livre e mira independente. Preserva a identidade do tanque-gato original e reaproveita armas, conceitos de objetivos e perks da branch de terceira pessoa.
 
-A branch `codex/third-person-cat-shooter` propõe câmera sobre o ombro. Este desenho **substitui essa decisão apenas na nova edição**: dois jogadores com câmeras livres exigiriam tela dividida ou duas máquinas. Para a primeira versão completa, uma câmera compartilhada permite investir o esforço em combate, cooperação e acabamento. Não manter duas câmeras e dois gêneros como obrigações simultâneas.
+A branch `codex/third-person-cat-shooter` propõe câmera sobre o ombro. Este desenho **substitui essa decisão apenas na nova edição**. A câmera isométrica já implementada fica como base da v1 solo; seu enquadramento para dois jogadores é compatibilidade futura, sem gate nesta entrega. O esforço restante vai para combate, campanha e acabamento.
 
 Alternativas examinadas: evoluir o TPS com tela dividida preservaria sua câmera, mas duplicaria composição/HUD e exigiria validar dois pontos de vista; migrar tudo para Godot criaria outra migração antes de demonstrar diversão. Continuar em Three/R3F com câmera compartilhada é a escolha deste plano, não uma afirmação de superioridade universal da ferramenta.
 
@@ -20,49 +22,49 @@ Alternativas examinadas: evoluir o TPS com tela dividida preservaria sua câmera
 
 Estas linhas são normativas e devem ser copiadas para o plano:
 
-- G01: Entregar 1 ou 2 jogadores locais; online, LAN, contas, backend, monetização e mobile ficam fora da v1.
+- G01: Entregar uma campanha local completa para P1. P2 e cooperação ficam para depois da v1; online, LAN, contas, backend, monetização e mobile também ficam fora.
 - G02: Manter React + TypeScript + Vite + Three.js/R3F; Blender produz arte, não executa o jogo.
 - G03: Uma única simulação em TypeScript governa o combate; React, meshes e Zustand não são escritores concorrentes do mundo.
 - G04: Usar passo fixo de 1/60 s, RNG com seed, IDs locais monotônicos e timers de simulação; nenhuma regra de combate depende de Date.now, Math.random ou relógio do render.
-- G05: Oferecer dois gamepads, teclado/mouse + gamepad e teclado compartilhado assistido; nenhuma dessas combinações deve ser declarada validada sem seu teste correspondente.
-- G06: Friendly fire desligado; vida, arma, cooldown, perks, input e estado de queda pertencem a cada PlayerId.
+- G05: Validar teclado/mouse de P1 no Mac real. Se a edição solo oferecer um gamepad standard a P1, validar esse perfil fisicamente antes de anunciá-lo como suportado. Combinações com P2 não são gate da v1.
+- G06: Vida, arma, cooldown, perks, input e resultado de P1 são governados pelo core. O isolamento por PlayerId e friendly fire já implementados permanecem como compatibilidade futura, sem obrigar cooperação na campanha solo.
 - G07: O escopo final contém 4 gatos cosméticos, 3 armas, 3 arquétipos de inimigo, 3 arenas, 1 chefe e 6 perks; nada disso exige desbloqueio por grind.
 - G08: Assets finais possuem fonte editável, exportação GLB quando aplicável, proveniência e licença documentada; placeholders não satisfazem o aceite visual.
-- G09: Toda a interface de jogador é PT-BR; menus e escolhas são operáveis por gamepad, teclado e mouse conforme o dispositivo atribuído.
+- G09: Toda a interface da v1 é PT-BR; menus e escolhas são operáveis pelo teclado/mouse de P1 e pelo gamepad de P1 quando oferecido. Controles e opções de P2 não aparecem na edição de produção.
 - G10: Não instalar ou alterar configurações globais, comprar assets, usar geração paga, publicar, mergear ou sobrescrever trabalho externo sem autorização específica.
-- G11: Toda tarefa de código tem teste causal vermelho e verde; arte tem validação estrutural e prova visual; diversão e controles físicos exigem playtest humano.
+- G11: Toda tarefa de código tem teste causal vermelho e verde; arte tem validação estrutural e prova visual; sensação de jogo e controles de P1 exigem playtest humano.
 - G12: Nenhum teste, build, benchmark, render ou playtest foi executado durante a elaboração deste pacote; metas de desempenho e diversão são critérios futuros.
 
 ## 3. A experiência
 
 **Nome de trabalho:** Nitrokats Reborn: Madrugada de Caos. Quatro gatos pilotam pequenos veículos improvisados para recuperar a central de comida do bairro, ocupada por máquinas descontroladas. Visual de brinquedos de oficina com sucata retrofuturista, cores legíveis, expressões felinas grandes e humor visual. Sem violência realista contra animais.
 
-Anakin, Yang, Maya e Ivy são quatro aparências sobre o mesmo conjunto de regras. Aparência não obriga papel de suporte ou configura uma vantagem escondida. Ambos podem escolher o mesmo gato; marcadores P1/P2 e silhuetas do indicador distinguem os jogadores.
+Anakin, Yang, Maya e Ivy são quatro aparências sobre o mesmo conjunto de regras. Aparência não obriga papel de suporte ou configura uma vantagem escondida. P1 escolhe qualquer gato. Marcadores de P2 existentes ficam fora da interface de produção solo.
 
 ```text
-ABRIR → LOBBY → GATOS + CONTROLES → TREINO OPCIONAL
+ABRIR → ESCOLHER GATO + CONTROLE → TREINO OPCIONAL
                  ↓
           GARAGEM: limpar a arena
                  ↓
-       cada jogador escolhe 1 perk
+             P1 escolhe 1 perk
                  ↓
         MERCADO: defender o gerador
                  ↓
-       cada jogador escolhe 1 perk
+             P1 escolhe 1 perk
                  ↓
           TELHADO: derrotar o chefe
                  ↓
        VITÓRIA → RESULTADO → JOGAR DE NOVO
 ```
 
-Alvo de duração de uma campanha: 8–12 minutos, a ajustar pelo playtest. Não programar duração artificial para forçar esse intervalo. Uma arena de treino permite testar controles sem dano, armas e resgate sem iniciar uma campanha.
+Alvo de duração de uma campanha: 8–12 minutos, a ajustar pelo playtest. Não programar duração artificial para forçar esse intervalo. Uma arena de treino permite testar movimento, mira, armas e dash sem dano e sem iniciar uma campanha.
 
 ### Conteúdo fechado
 
 | Conteúdo | Contrato |
 |---|---|
 | Garagem dos Gatos | Arena de eliminação, obstáculos baixos, espaços amplos; introduz runner e gunner. |
-| Mercado da Madrugada | Defender uma área visível; um pode proteger o gerador enquanto o outro limpa o entorno. Introduz brute. |
+| Mercado da Madrugada | Defender uma área visível enquanto P1 controla os inimigos que a contestam. Introduz brute. |
 | Telhado da Central | Arena de chefe sem quedas letais; cobertura baixa e áreas de perigo claramente marcadas. |
 | Runner | Aproximação com desvio de obstáculos; contato tem cooldown e aviso legível. |
 | Gunner | Mantém distância, prepara disparo e atira; sem tiro inevitável surgindo dentro do jogador. |
@@ -71,32 +73,31 @@ Alvo de duração de uma campanha: 8–12 minutos, a ajustar pelo playtest. Não
 
 Não incluir escolta, mapas procedurais, destruição física generalizada, inventário, árvore de habilidades, editor de fases, geração 3D em runtime ou cutscenes na v1.
 
-## 4. Controle e cooperação
+## 4. Controle solo e compatibilidade futura
 
 ### Dispositivos
 
-| Perfil | Movimento | Mira | Tiro / dash / resgate / arma |
+| Perfil | Movimento | Mira | Tiro / dash / troca de arma |
 |---|---|---|---|
-| Teclado + mouse | WASD | Mouse no chão da arena | Mouse esquerdo / Espaço / E / Q |
-| Gamepad standard | Analógico esquerdo | Analógico direito | RT / botão sul / botão oeste / botão norte |
-| Teclado compartilhado P1 | WASD | Automática assistida | F / G / E / Q |
-| Teclado compartilhado P2 | Setas | Automática assistida | K / L / O / P |
+| Teclado + mouse | WASD | Mouse no chão da arena | Mouse esquerdo / Espaço / Q |
+| Gamepad standard | Analógico esquerdo | Analógico direito | RT / botão sul / botão norte |
+| Teclado compartilhado P1/P2 | Implementado na base técnica | Fora do aceite da v1 | Reservado para a fase futura de cooperação |
 
-ESC ou Start abre pausa. Usar `KeyboardEvent.code` para posições físicas e exibir o mapeamento no lobby. O perfil compartilhado usa o mesmo teclado com conjuntos distintos, não duas instâncias de listeners globais disputando as mesmas teclas. Ghosting de teclado é uma limitação real a verificar no hardware: a tela de diagnóstico mostra entradas simultâneas e oferece remapeamento. Não exigir a compra de controles para experimentar.
+ESC ou Start abre pausa. Usar `KeyboardEvent.code` para posições físicas e exibir o mapeamento de P1. Teclado/mouse é o caminho obrigatório da v1; a compra de controle não é requisito. Ghosting do teclado compartilhado pertence ao futuro aceite de P2.
 
-Gamepads com `mapping !== 'standard'` abrem diagnóstico/remapeamento; não assumir ordem de botões. Atribuir dispositivos explicitamente ao slot P1/P2, não pelo simples fato de ocuparem índice 0/1. Reutilização de índice após desconexão não rouba o personagem de outro jogador. Um novo dispositivo deve confirmar a reatribuição ao slot desconectado.
+Se o menu solo oferecer gamepad standard para P1, sua navegação, disparo, pausa, desconexão e retorno precisam de prova física. Gamepads com `mapping !== 'standard'` não são anunciados como compatíveis sem remapeamento provado. A lógica já criada para slots P1/P2 permanece no código, mas sua matriz de dois dispositivos é futura.
 
-Zona morta radial inicial 0,18, reescalada para 0–1. Movimento diagonal normalizado. Mira do analógico mantém a última direção válida ao retornar ao centro. Assistência leve pode ser desligada por jogador. No teclado compartilhado, assistência busca inimigo visível mais próximo, sem mirar através de cobertura; sem alvo, conserva a última direção.
+Zona morta radial inicial 0,18, reescalada para 0–1. Movimento diagonal normalizado. Mira do analógico de P1 mantém a última direção válida ao retornar ao centro. Assistência leve pode ser desligada para P1. O código de assistência do teclado compartilhado não integra o aceite solo.
 
 Perda de foco ou desconexão de dispositivo em uso pausa toda a partida, zera entradas pendentes e pede retomada explícita. Segurar o botão que confirmou o menu não pode disparar ou dar dash ao voltar. Apenas reconectar não retoma o jogo.
 
-### Queda e resgate
+### Derrota solo e resgate futuro
 
-HP inicial 100; personagens cosméticos não alteram isso. Ao chegar a zero, o jogador fica caído: pode se arrastar lentamente, não atira e não recebe novos hits. Um aliado ativo a até 2,5 m segura resgate por 2 segundos de simulação. Afastar-se ou soltar o comando zera o progresso. Retorna com 40 HP e 1,5 s de invulnerabilidade.
+HP inicial 100; personagens cosméticos não alteram isso. Em campanha solo, P1 chegar a zero encerra a run como derrota, com tela de resultado e caminho de revanche. O estado de queda e o resgate já implementados continuam reservados ao modo futuro de P2 e podem ser usados no treino técnico, sem requisito de aparecer na jornada solo final.
 
-Para evitar longas esperas, se o parceiro continuar ativo por 12 s de simulação, ocorre resgate automático com 30 HP e a mesma invulnerabilidade. Dois jogadores caídos significam derrota; em solo, cair também significa derrota. Resolver todas as mortes do tick antes do resultado: se chefe e último jogador morrem no mesmo tick, derrota tem precedência. Não conceder vitória por ordem acidental de arrays.
+Resolver todas as mortes do tick antes do resultado: se chefe e P1 morrem no mesmo tick, derrota tem precedência. Não conceder vitória por ordem acidental de arrays. O resgate automático de 12 s e a derrota por dois jogadores caídos permanecem contratos históricos de cooperação, sem gate nesta v1.
 
-Sem colisão bloqueante entre aliados. Sem friendly fire, incluindo splash. Cura e perks nunca vazam para o slot vizinho. Pontuação final é da equipe; painel pode reconhecer resgates e objetivos sem declarar um jogador superior ao outro.
+O resultado solo mostra progresso da campanha, tempo e objetivos de P1. A ausência de friendly fire e de vazamento de perks entre slots permanece preservada no core, mas não compõe a UI de produção desta v1.
 
 ## 5. Combate e progressão
 
@@ -116,7 +117,7 @@ Colisão de projétil usa segmento entre posição anterior e seguinte. Resolver
 
 ### Perks
 
-Após arenas 1 e 2, cada jogador recebe três opções distintas dentre os seis perks ainda não escolhidos por ele. Escolha independente, sem competição por loot; os dois podem pegar o mesmo perk. A partida fica congelada até ambos confirmarem. Sem timeout que escolha no lugar da pessoa.
+Após arenas 1 e 2, P1 recebe três opções distintas dentre os seis perks ainda não escolhidos. A partida fica congelada até P1 confirmar. Sem timeout que escolha no lugar da pessoa. O estado por jogador já previsto no core continua apto a suportar P2 futuramente, mas a UI da v1 contém uma escolha por intermission.
 
 - `rapid_loader`: intervalo entre tiros ×0,82; texto deve dizer “intervalo 18% menor”, não confundir com exatamente +18% de tiros por segundo.
 - `overcharge`: dano ×1,22.
@@ -129,11 +130,11 @@ Após arenas 1 e 2, cada jogador recebe três opções distintas dentre os seis 
 
 Garagem: eliminar 24 inimigos efetivamente registrados no encontro; máximo inicial 12 ativos. Não completar por observar um array vazio antes do primeiro spawn. Um encontro é concluído quando todos os spawns previstos foram emitidos e seus inimigos foram derrotados.
 
-Mercado: acumular 45 s de controle. Contagem só avança com pelo menos um jogador ativo dentro do círculo de raio 4 m e nenhum inimigo dentro. Sair ou ser contestado congela, mas não desfaz progresso. Spawns param ao completar; eliminar sobreviventes abre a saída. O gerador não tem barra de HP nesta versão.
+Mercado: acumular 45 s de controle. Contagem só avança com P1 ativo dentro do círculo de raio 4 m e nenhum inimigo dentro. Sair ou ser contestado congela, mas não desfaz progresso. Spawns param ao completar; eliminar sobreviventes abre a saída. O gerador não tem barra de HP nesta versão.
 
-Telhado: spawn de um MechaCat confirmado por ID; vitória exige evento de morte daquele ID e pelo menos um jogador ativo. Ausência do boss no começo não é vitória. Chefe inicial: 1500 HP solo ou 2250 HP duo; esses valores devem ser calibrados no playtest.
+Telhado: spawn de um MechaCat confirmado por ID; vitória exige evento de morte daquele ID e P1 ativo. Ausência do boss no começo não é vitória. Chefe inicial: 1500 HP solo, a calibrar no playtest. O valor duo de 2250 HP fica para revisão futura, sem influenciar a v1.
 
-Dificuldade inicial Relaxado: dano recebido ×0,65 e cadência de spawn ×1,25 no intervalo. Normal: multiplicadores 1. Vida de inimigos comuns mantém o baseline; conteúdo coop não dobra indiscriminadamente todos os parâmetros.
+Dificuldade inicial Relaxado: dano recebido ×0,65 e cadência de spawn ×1,25 no intervalo. Normal: multiplicadores 1. Vida de inimigos comuns mantém o baseline. Balancear a campanha para uma pessoa antes de rever parâmetros de cooperação.
 
 ## 6. Arquitetura de implementação
 
@@ -146,7 +147,7 @@ BrowserInput → InputHub → PlayerInput por PlayerId
                                 ↓
                        FixedClock (60 Hz)
                                 ↓
-  mundo TS: movimento → AI → armas → impactos → resgates → objetivos
+  mundo TS: movimento → AI → armas → impactos → objetivos
                                 ↓
                  snapshot + eventos do tick
                      ↙                    ↘
@@ -191,7 +192,7 @@ export interface PlayerState extends PlayerConfig {
 }
 ```
 
-`World` inclui config, RNG, contador de IDs, tick, tempo, phase, resumePhase, players, enemies, projectiles, stageIndex, objetivo, encounter, escolhas de perks e resultado. Os detalhes dos registros de inimigos/projéteis são definidos nas tarefas proprietárias; não usar `any` para esconder contratos. `createWorld(config): World` valida 1–2 IDs únicos. `stepWorld(world,input): readonly GameEvent[]` avança exatamente 1/60 s quando `phase === 'playing'`. `pauseWorld` preserva a fase anterior; `resumeWorld` restaura apenas após confirmação.
+`World` inclui config, RNG, contador de IDs, tick, tempo, phase, resumePhase, players, enemies, projectiles, stageIndex, objetivo, encounter, escolhas de perks e resultado. Os detalhes dos registros de inimigos/projéteis são definidos nas tarefas proprietárias; não usar `any` para esconder contratos. `createWorld(config): World` já valida 1–2 IDs únicos; a jornada de produção da v1 cria exatamente um P1. `stepWorld(world,input): readonly GameEvent[]` avança exatamente 1/60 s quando `phase === 'playing'`. `pauseWorld` preserva a fase anterior; `resumeWorld` restaura apenas após confirmação.
 
 Um evento contém `{id:number, tick:number, type:string, entityId?:string, playerId?:PlayerId, position?:Vec2}` e payload discriminado por tipo, refinado na tarefa proprietária. Tipos de evento usados: `shot`, `hit`, `enemy-killed`, `player-down`, `player-revived`, `objective-complete`, `boss-phase`, `run-ended`.
 
@@ -203,7 +204,7 @@ Restart cria mundo, RNG, pools e clocks novos a partir de config/seed; não reut
 
 ## 7. Câmera, cenários e arte
 
-Câmera ortográfica compartilhada, orientação fixa, centro suavizado entre os jogadores. Arenas compactas, jogáveis sem plataformas e sem saltos. Enquadrar os dois jogadores com margens usando projeção nos eixos da câmera, não distância XZ isolada. Em 16:9 e 16:10, ambos devem permanecer dentro de 85% da região útil. Obstáculos altos são decorativos na periferia; nenhuma parede cobre continuamente um personagem. Sem câmera giratória ou split-screen nesta entrega.
+Câmera ortográfica de orientação fixa, centrada suavemente em P1 na campanha solo. Arenas compactas, jogáveis sem plataformas e sem saltos. Em 16:9 e 16:10, P1 deve permanecer legível dentro de 85% da região útil. Obstáculos altos são decorativos na periferia; nenhuma parede cobre continuamente o personagem. O enquadramento compartilhado já implementado pode permanecer como compatibilidade futura, sem teste de extremos de dois jogadores na v1.
 
 ### Pipeline Blender
 
@@ -233,7 +234,7 @@ Blender: 1 unidade = 1 m, +Z para cima, -Y para frente. GLB/runtime: +Y para cim
 
 Hero final: microkart de aproximadamente 2,2 m de comprimento ×1,4 m de largura; cabeça expressiva e orelhas reconhecíveis. Colisor de gameplay usa raio 0,85 m, não o contorno das orelhas. Nós obrigatórios: `root`, `body`, `turret`, `muzzle`, `wheel_fl`, `wheel_fr`, `wheel_rl`, `wheel_rr`. Clipes rígidos `idle`, `hit`, `celebrate`. Evitar rig facial complexo ou animação de caminhada nesta versão.
 
-Marcadores de cena usam prefixo `NK_`: `NK_spawn_p1`, `NK_spawn_p2`, `NK_enemy_spawn_*`, `NK_objective`, `NK_exit`, `NK_collider_*`. O exportador escreve dados de gameplay em JSON e valida alinhamento com o GLB. Marcadores não aparecem como geometria no jogo.
+Marcadores de cena usam prefixo `NK_`: `NK_spawn_p1`, `NK_enemy_spawn_*`, `NK_objective`, `NK_exit`, `NK_collider_*`. `NK_spawn_p2` pode existir para a fase futura, mas não é obrigatório nem pode bloquear o export da v1 solo. O exportador escreve dados de gameplay em JSON e valida alinhamento com o GLB. Marcadores não aparecem como geometria no jogo.
 
 Metas iniciais por asset: hero ≤12 mil triângulos, inimigo comum ≤6 mil, boss ≤20 mil; texturas padrão 1024 px, exceção máxima 2048 px registrada; até 4 materiais por hero/inimigo. São limites de produção propostos, a confirmar pelo benchmark. Nenhum arquivo individual precisa exceder 50 MB para esta v1.
 
@@ -247,11 +248,11 @@ Um único writer por sessão Blender. Serviço escuta somente loopback; sem aces
 
 ## 8. UX, áudio e acabamento
 
-Menu: Jogar em dupla / Jogar sozinho / Treino / Opções. Lobby tem slot, gato, dispositivo, teste de inputs, dificuldade e pronto. A confirmação pertence ao jogador; apenas o host navega entre telas globais. Dentro da escolha de perks cada slot tem foco independente.
+Menu de produção: Jogar / Treino / Opções. A configuração solo de P1 mostra gato, dispositivo, teste de inputs, dificuldade e confirmação. P2 e “Jogar em dupla” já existem no protótipo técnico, mas ficam indisponíveis na edição de produção da v1. A escolha de perks usa apenas o foco de P1.
 
-HUD mostra dois retratos, HP, arma, cooldown de dash e objetivo compartilhado. Indicadores usam texto/forma além de cor. Reduzir brilho pós-processado, tremor e flashes é configurável; não esconder tiros inimigos com bloom. Tamanho do HUD deve ser legível em 1280×720, 1920×1080 e 1440×900.
+HUD mostra P1, HP, arma, cooldown de dash e objetivo atual. Indicadores usam texto/forma além de cor. Reduzir brilho pós-processado, tremor e flashes é configurável; não esconder tiros inimigos com bloom. Tamanho do HUD deve ser legível em 1280×720, 1920×1080 e 1440×900.
 
-Áudio inicial só após gesto de usuário. Três buses: música, efeitos e interface. Sons de disparo/hit/resgate/objetivo precisam ser distinguíveis; música eletrônica original ou CC0 documentada, sem trechos de músicas comerciais. Falha de áudio não bloqueia a partida. Pausa e restart não criam trilhas duplicadas.
+Áudio inicial só após gesto de usuário. Três buses: música, efeitos e interface. Sons de disparo/hit/objetivo precisam ser distinguíveis; som de resgate permanece opcional enquanto P2 estiver fora da v1. Música eletrônica original ou CC0 documentada, sem trechos de músicas comerciais. Falha de áudio não bloqueia a partida. Pausa e restart não criam trilhas duplicadas.
 
 Salvar apenas configurações e melhores resultados locais com campo version=1; sem salvar a campanha em andamento nesta versão. JSON corrompido ou storage indisponível aplica defaults e mostra aviso não bloqueante. Nada exige conta ou conexão durante a partida.
 
@@ -263,14 +264,14 @@ Limites iniciais: 24 inimigos ativos, 256 projéteis, 512 partículas; render in
 
 Três classes de aceite independentes:
 
-1. **Regras:** unitários e integração provam HP por jogador, colisões, resgate, objetivos, pause e resultado corretos.
-2. **Execução real:** browser com WebGL, GLBs reais, gamepads físicos, sons, desempenho e restart.
-3. **Experiência:** os dois conseguem jogar e entendem por que ganharam ou perderam. O desejo de repetir não é substituído por um screenshot verde.
+1. **Regras:** unitários e integração provam HP de P1, colisões, objetivos, pausa e resultado corretos.
+2. **Execução real:** browser com WebGL, GLBs reais, teclado/mouse de P1, eventual gamepad de P1 oferecido, sons, desempenho e restart.
+3. **Experiência:** uma pessoa consegue concluir a campanha e entende por que ganhou ou perdeu. O desejo de repetir não é substituído por um screenshot verde.
 
-Após o primeiro encontro cooperativo, testar com pessoas antes de multiplicar conteúdo. Sem pessoas disponíveis, registrar gate humano pendente; continuar apenas trabalho independente ou conteúdo já previsto, sem afirmar que a diversão foi aprovada. A release pode ser tecnicamente candidata, mas não “validada para o casal” enquanto esse gate faltar.
+Após a primeira campanha solo completa, testar com Marco antes de declarar conforto ou diversão. Sem essa sessão, registrar gate humano pendente; continuar conteúdo previsto sem afirmar que a experiência foi aprovada. A release pode ser tecnicamente candidata, mas não “validada em jogo real” enquanto esse gate faltar.
 
 Entregar build local de produção, `Jogar.command`, instrução curta, controles, créditos e diagnóstico. O launcher inicia servidor exclusivamente em 127.0.0.1, abre o browser e encerra somente o processo que criou. Nada de matar todos os Chromes ou Blenders da máquina. Publicação online é uma ação separada.
 
 ## 10. Autoridade e mudanças
 
-Este design prevalece sobre o plano em divergências. Cada alteração de contrato registra motivo, arquivos/testes afetados e custo de reversão. Bugs descobertos que impedem o objetivo pertencem à tarefa dona do comportamento, mesmo se o sintoma não estiver escrito literalmente. Não reabrir decisões de engine, câmera ou modo de jogo por preferência do implementador. Mudanças de escopo exigem uma proposta separada; a v1 termina quando o contrato acima estiver comprovado.
+Este design prevalece sobre o plano em divergências. O ruling solo acima veio de instrução explícita de Marco, depois de T10; afeta T11–T25 e os critérios de aceite, sem invalidar os testes históricos de T01–T10. Cada alteração de contrato registra motivo, arquivos/testes afetados e custo de reversão. Bugs descobertos que impedem o objetivo pertencem à tarefa dona do comportamento, mesmo se o sintoma não estiver escrito literalmente. Não reabrir decisões de engine ou câmera por preferência do implementador. A v1 termina quando a campanha solo e o release local estiverem comprovados.

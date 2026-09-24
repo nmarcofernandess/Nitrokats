@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Entregar um jogo cooperativo local completo de gatos em microveículos para duas pessoas, com três arenas, chefe, arte Blender e revanche.
+**Goal:** Entregar um jogo local solo completo para P1, com três arenas, chefe, arte Blender e revanche. P2 é uma etapa futura.
 
-**Architecture:** Preservar o projeto histórico e criar uma edição nova em `src/play/`, com simulação TypeScript por tick fixo, render R3F como projeção, input por jogador e conteúdo autorado no Blender. Reaproveitar as tabelas e conceitos úteis da branch TPS, mas não sua autoridade single-player. A distribuição é um build web local, sem servidor multiplayer.
+**Architecture:** Preservar o projeto histórico e criar uma edição nova em `src/play/`, com simulação TypeScript por tick fixo, render R3F como projeção, input de P1 e conteúdo autorado no Blender. O core já suporta dois slots por causa de T01–T10; a distribuição v1 inicia apenas P1. A distribuição é um build web local, sem servidor multiplayer.
 
 **Tech Stack:** React 19 / TypeScript / Vite 7 / Three 0.181 / R3F 9 / Zustand 5 / Vitest 3 conforme lock da branch; Playwright a fixar na T01; Blender 4.5.14 LTS como baseline de arte. Não é uma recomendação de atualizar dependências em massa.
 
@@ -14,26 +14,28 @@
 
 **Leitura obrigatória:** spec, este plano e `docs/superpowers/research/2026-09-24-repository-audit.md`. Conferir HEAD remoto na execução e registrar qualquer diferença. A inspeção desta proposta foi documental; não houve execução do jogo, Blender ou testes.
 
-**Estado:** PLANEJADO. As 25 tarefas abaixo começam pendentes. Este documento não é evidência de implementação. A mudança para câmera isométrica compartilhada é uma decisão proposta explícita, não preservação automática da câmera TPS existente.
+**Estado:** T01–T10 concluídas e revisadas no checkpoint `82b8951`; T11–T25 pendentes e redirecionadas para o release solo em 24/09/2026. Os blocos de T01–T10 preservam a especificação histórica do trabalho já entregue, inclusive P2, e seus recibos são a evidência. Nenhum gate de P2 desses blocos se transfere automaticamente para o release solo. A câmera isométrica implementada é a base atual.
+
+**Ruling de escopo executável:** de T11 até T25, exemplos, interfaces, provas e aceite devem funcionar com `players: [{id:'p1', ...}]`. A jornada de produção não mostra “Jogar em dupla”, não cria P2 e não exige resgate, segundo gamepad, teclado dividido, escolha dupla de perk ou playtest do casal. Preservar o código existente de P2 sem ampliá-lo para o MVP. Se algum exemplo histórico abaixo conflitar com essa regra, a tarefa futura deve usar o caso solo explicitado em sua seção. P2 só volta como trabalho novo depois de a campanha solo e o pacote local passarem seus gates.
 
 ## Global Constraints
 
-- G01: Entregar 1 ou 2 jogadores locais; online, LAN, contas, backend, monetização e mobile ficam fora da v1.
+- G01: Entregar uma campanha local completa para P1; P2, cooperação, online, LAN, contas, backend, monetização e mobile ficam fora da v1.
 - G02: Manter React + TypeScript + Vite + Three.js/R3F; Blender produz arte, não executa o jogo.
 - G03: Uma única simulação em TypeScript governa o combate; React, meshes e Zustand não são escritores concorrentes do mundo.
 - G04: Usar passo fixo de 1/60 s, RNG com seed, IDs locais monotônicos e timers de simulação; nenhuma regra de combate depende de Date.now, Math.random ou relógio do render.
-- G05: Oferecer dois gamepads, teclado/mouse + gamepad e teclado compartilhado assistido; nenhuma dessas combinações deve ser declarada validada sem seu teste correspondente.
-- G06: Friendly fire desligado; vida, arma, cooldown, perks, input e estado de queda pertencem a cada PlayerId.
+- G05: Validar teclado/mouse de P1 em hardware real. Se um gamepad standard for oferecido a P1, validar esse perfil fisicamente. Dois controles e teclado compartilhado pertencem à fase futura.
+- G06: Vida, arma, cooldown, perks, input e resultado de P1 pertencem ao core. O isolamento P1/P2 já entregue permanece preservado, sem gate cooperativo nesta v1.
 - G07: O escopo final contém 4 gatos cosméticos, 3 armas, 3 arquétipos de inimigo, 3 arenas, 1 chefe e 6 perks; nada disso exige desbloqueio por grind.
 - G08: Assets finais possuem fonte editável, exportação GLB quando aplicável, proveniência e licença documentada; placeholders não satisfazem o aceite visual.
-- G09: Toda a interface de jogador é PT-BR; menus e escolhas são operáveis por gamepad, teclado e mouse conforme o dispositivo atribuído.
+- G09: Toda a interface da v1 é PT-BR; menus e escolhas são operáveis pelo teclado/mouse de P1 e pelo gamepad de P1 quando oferecido. P2 não aparece na edição de produção.
 - G10: Não instalar ou alterar configurações globais, comprar assets, usar geração paga, publicar, mergear ou sobrescrever trabalho externo sem autorização específica.
-- G11: Toda tarefa de código tem teste causal vermelho e verde; arte tem validação estrutural e prova visual; diversão e controles físicos exigem playtest humano.
+- G11: Toda tarefa de código tem teste causal vermelho e verde; arte tem validação estrutural e prova visual; sensação de jogo e controles de P1 exigem playtest humano.
 - G12: Nenhum teste, build, benchmark, render ou playtest foi executado durante a elaboração deste pacote; metas de desempenho e diversão são critérios futuros.
 
 ## Review Focus
 
-- T07/T23: desconexão de gamepad, índice reutilizado ou tecla solta fora da janela não pode trocar o dono, manter tiro preso ou retomar sozinho.
+- T23: perda de foco, tecla solta fora da janela e desconexão do gamepad de P1, quando oferecido, não podem manter tiro preso nem retomar a partida sozinhos. Os casos de dois dispositivos da T07 ficam preservados para a fase futura.
 - T03/T07/T23: baixo FPS, pausa, catch-up e botão mantido não podem duplicar dash, tiro, cooldown ou progresso de objetivo.
 - T12/T13: chefe/elite ainda não criado, objetivo não ocupado e inimigo contestando zona não podem produzir progresso ou vitória falsa.
 - T16/T18/T25: asset faltante, licença sem evidência, GLB incompleto ou placeholder não podem passar por release final nem deixar tela preta sem saída.
@@ -44,11 +46,11 @@
 | Marco | Tarefas | O que fica utilizável | Gate |
 |---|---|---|---|
 | M0 — preservar | T01 | Original recuperável e baseline registrado | História preservada, leitura real de build/testes |
-| M1 — jogar junto cedo | T02–T10 | Dois jogadores, inputs, treino, armas, câmera e resgate em greybox | Smoke causal e primeiro contato humano |
+| M1 — base técnica histórica | T02–T10 | Core, inputs, treino, armas, câmera e coop greybox já entregues | Recibos e reviews de T01–T10; P2 sem gate da v1 |
 | M2 — partida completa | T11–T15 | Inimigos, três objetivos/arenas greybox, perks, chefe e final | Vitória/derrota/revanche por regras reais |
 | M3 — identidade Blender | T16–T19 | Quatro aparências, veículos, inimigos e cenários finais | Fontes + GLBs + manifesto + prova visual |
 | M4 — acabamento | T20–T22 | Custos limitados, áudio, preferências e conforto | Soak focal, falhas recuperáveis, sem regressão de regras |
-| M5 — entregar | T23–T25 | Release local documentada | Campanha, controles físicos, performance e casal |
+| M5 — entregar | T23–T25 | Release local solo documentada | Campanha real, controle de P1, performance e playtest solo |
 
 ```text
 T01 → T02 → T03 → T04 → T05 → T06 → T07 → T08 → T09 → T10
@@ -782,7 +784,7 @@ O verbo do commit não substitui aceite: gate técnico ou humano ainda pendente 
 
 **Files:** **Criar:** `src/play/ai/navigation.ts`, `src/play/ai/enemies.ts`, `src/play/content/enemies.ts`, `src/play/ai/navigation.test.ts`. **Modificar:** `src/play/core/step.ts`.
 
-**Interfaces:** Produz `buildNavGrid(bounds,colliders,cellSize):NavGrid`, `findPath(grid,start,end):Vec2[]`, `stepEnemies(world):void`. Alvo de AI é PlayerId ativo escolhido por distância e desempate estável.
+**Interfaces:** Produz `buildNavGrid(bounds,colliders,cellSize):NavGrid`, `findPath(grid,start,end):Vec2[]`, `stepEnemies(world):void`. Na campanha solo, o alvo da AI é P1 ativo. O desempate entre jogadores da base técnica só volta a ser gate na fase de P2.
 
 - [ ] **Step 1: Escrever o teste causal inicial e ler as dependências.**
 
@@ -817,7 +819,7 @@ Runner: velocidade 4,2; contato 12 de dano com intervalo 0,8 s. Gunner: velocida
 
 Repetir `npm run test:unit -- src/play/ai/navigation.test.ts` e os testes dos consumidores alterados. Esperado: todos os casos desta tarefa e regressões afetadas passam. Em arte, executar também export/import e registrar imagens reais; validação de metadados sozinha não atesta aparência. No fim do marco, executar `npm run test:unit`, `npm run lint`, `npm run build` e o smoke do estado implementado. Não rodar a campanha longa a cada mudança mecânica.
 
-**Aceite da unidade:** Inimigos alcançam os dois jogadores, respeitam cobertura e não atacam durante aviso/spawn. AI não continua mirando um jogador caído.
+**Aceite da unidade:** Inimigos alcançam P1, respeitam cobertura e não atacam durante aviso/spawn. AI não continua mirando P1 após a derrota. Testar com uma run contendo apenas P1.
 
 - [ ] **Step 5: Persistir evidência e commit revisável.**
 
@@ -848,9 +850,9 @@ import { it, expect } from 'vitest';
 import { stepObjective, startEncounter } from './objectives';
 import { makeWorld, player, ticks } from '../../../tests/fixtures/world';
 it('não defende zona estando fora dela', () => {
-  const w = makeWorld();
+  const w = makeWorld({ players: [{ id: 'p1', catId: 'anakin', weaponId: 'pulse_rifle' }] });
   startEncounter(w, { type: 'defend', center: { x: 0, z: 0 }, radius: 4, requiredSeconds: 45 });
-  for (const p of w.players) p.position = { x: 10, z: 10 };
+  player(w, 'p1').position = { x: 10, z: 10 };
   ticks(w, 120); stepObjective(w);
   expect(w.encounter?.progressSeconds).toBe(0);
   player(w, 'p1').position = { x: 0, z: 0 };
@@ -871,7 +873,7 @@ Esperado antes da implementação: falha pela capacidade ausente ou comportament
 
 `startEncounter` mora em objectives.ts e é reexportado por director.ts se necessário, nunca duas implementações. Definition é união discriminada: eliminate(total), defend(center,radius,requiredSeconds), boss(requiredKind). Apenas director emite spawns; apenas objectives muda progresso; step chama cada sistema uma vez.
 
-Eliminação exige IDs/quota real e zero sobreviventes; defesa aplica ocupação por player ativo e contestação por inimigo. Sem spawn em treino. Concluir defesa para de gerar inimigos, mas mantém cleanup antes de intermission. Boss ausente com requiredBossId null nunca completa. Mudar arena limpa projéteis/encontros, reposiciona os dois e mantém HP/perks/arma. Usar layouts greybox de 32×24 m inicialmente para caberem na câmera. Bounds, colisores e spawn points vêm do mesmo LevelDefinition consumido pelo render; não duplicar números no JSX.
+Eliminação exige IDs/quota real e zero sobreviventes; defesa aplica ocupação por P1 ativo e contestação por inimigo. Sem spawn em treino. Concluir defesa para de gerar inimigos, mas mantém cleanup antes de intermission. Boss ausente com requiredBossId null nunca completa. Mudar arena limpa projéteis/encontros, reposiciona P1 e mantém HP/perks/arma. Usar layouts greybox de 32×24 m inicialmente para caberem na câmera. Bounds, colisores e spawn points vêm do mesmo LevelDefinition consumido pelo render; não duplicar números no JSX. A campanha da v1 é criada com um único P1.
 
 Adicionar testes do bug legado: elite obrigatório ainda não nasceu; array vazio antes do primeiro spawn; timer sozinho; zona contestada; pause; sair/voltar; limpar último inimigo durante objetivo; troca de fase idempotente.
 
@@ -912,7 +914,7 @@ import { startEncounter } from '../campaign/objectives';
 import { spawnEnemy } from '../core/world';
 import { applyDamage } from '../combat/damage';
 it('ausência inicial não vence; derrotar o boss registrado vence', () => {
-  const w = makeWorld(); w.stageIndex = 2;
+  const w = makeWorld({ players: [{ id: 'p1', catId: 'anakin', weaponId: 'pulse_rifle' }] }); w.stageIndex = 2;
   startEncounter(w, { type: 'boss', requiredKind: 'mechacat' });
   ticks(w, 1); expect(w.phase).not.toBe('won');
   const id = spawnEnemy(w, { kind: 'mechacat', position: { x: 0, z: 8 }, hp: 10 });
@@ -932,9 +934,9 @@ Esperado antes da implementação: falha pela capacidade ausente ou comportament
 
 - [ ] **Step 3: Implementar a unidade e seus casos de borda.**
 
-Ciclo fase 1: leque de 5 tiros com preparação 0,9 s; recuperação 1,2 s; investida em linha com preparação 1 s, ataque 0,5 s e recuperação 1,5 s. Aos 50% de HP, interromper ataque com transição de 1 s, limpar projéteis perigosos do ataque anterior e iniciar fase 2. Fase 2 mantém telegraphs, aumenta leque para 7 e convoca no máximo 4 runners, respeitando cap global. RNG escolhe alvo ativo, sem mudança instantânea após telegraph travado.
+Ciclo fase 1: leque de 5 tiros com preparação 0,9 s; recuperação 1,2 s; investida em linha com preparação 1 s, ataque 0,5 s e recuperação 1,5 s. Aos 50% de HP, interromper ataque com transição de 1 s, limpar projéteis perigosos do ataque anterior e iniciar fase 2. Fase 2 mantém telegraphs, aumenta leque para 7 e convoca no máximo 4 runners, respeitando cap global. Na v1 o único alvo é P1 ativo; não trocar alvo instantaneamente após telegraph travado.
 
-Geometria de ameaça no chão deriva dos mesmos parâmetros/área que causam dano. Boss não causa dano de ataque durante telegraph. Morte emite evento uma vez; limita spawns, encerra combate e abre resultado somente depois da resolução de derrota do tick. Testar fase única aos 50%, hit repetido, boss sem alvo, maxActive, telegraph e empate boss/último jogador.
+Geometria de ameaça no chão deriva dos mesmos parâmetros/área que causam dano. Boss não causa dano de ataque durante telegraph. Morte emite evento uma vez; limita spawns, encerra combate e abre resultado somente depois da resolução de derrota do tick. Testar fase única aos 50%, hit repetido, boss sem alvo, maxActive, telegraph e empate boss/P1. A vitória ocorre numa run solo completa, sem P2 ou resgate.
 
 - [ ] **Step 4: Reexecutar, revisar e registrar o GREEN real.**
 
@@ -956,7 +958,7 @@ O verbo do commit não substitui aceite: gate técnico ou humano ainda pendente 
 
 ---
 
-## Task 14: Portar perks por jogador com escolhas sem disputa
+## Task 14: Portar perks de P1 com escolha que pausa a campanha
 
 **ID:** T14 · **Marco:** M2 · **Depende de:** T13
 
@@ -970,14 +972,13 @@ O verbo do commit não substitui aceite: gate técnico ou humano ainda pendente 
 import { it, expect } from 'vitest';
 import { rollPerks, choosePerk } from './perks';
 import { makeWorld, player } from '../../../tests/fixtures/world';
-it('a melhoria pertence a quem escolheu e não duplica', () => {
-  const w = makeWorld(); w.phase = 'intermission';
+it('a melhoria de P1 não duplica', () => {
+  const w = makeWorld({ players: [{ id: 'p1', catId: 'anakin', weaponId: 'pulse_rifle' }] }); w.phase = 'intermission';
   const options = rollPerks(w, 'p1');
   expect(new Set(options).size).toBe(3);
   const picked = options[0];
   expect(choosePerk(w, 'p1', picked)).toBe(true);
   expect(choosePerk(w, 'p1', picked)).toBe(false);
-  expect(player(w, 'p2').perks).toEqual([]);
   expect(w.phase).toBe('intermission');
 });
 ```
@@ -992,16 +993,16 @@ Esperado antes da implementação: falha pela capacidade ausente ou comportament
 
 - [ ] **Step 3: Implementar a unidade e seus casos de borda.**
 
-Portar os seis IDs lidos em `src/game/config/perks.ts` e aplicar exatamente a semântica da spec. Opções sorteadas sem reposição com RNG do mundo. Server não existe: a autoridade é o core local. Rejeitar perk fora das opções do slot, opção duplicada e escolha fora de intermission. Ambos podem escolher o mesmo ID; ninguém rouba opção do outro.
+Portar os seis IDs lidos em `src/game/config/perks.ts` e aplicar exatamente a semântica da spec. Opções sorteadas sem reposição com RNG do mundo. Server não existe: a autoridade é o core local. Rejeitar perk fora das opções de P1, opção duplicada e escolha fora de intermission. A seleção solo deve funcionar sem P2 presente; manter o contrato tipado por PlayerId para uso futuro.
 
-Cada painel recebe foco de seu dispositivo; UI global não altera silenciosamente o foco do parceiro. Ao ambos confirmarem, advanceStage uma única vez. Core continua pausado durante escolha. Testar fortified em HP parcial, vampiric em overkill, shockwave sem recursão/friendly fire, intervalos reais após rapid_loader e stabilizer alterando dispersão. Snapshot numérico serve ao unitário, não substitui teste de dois controles escolhendo em paralelo.
+O painel de P1 recebe foco do dispositivo usado na campanha. Ao confirmar, `advanceStage` ocorre uma única vez; não aguardar confirmação de P2. Core continua pausado durante escolha. Testar fortified em HP parcial, vampiric em overkill, shockwave sem recursão, intervalos reais após rapid_loader e stabilizer alterando dispersão. O teste de escolhas paralelas em dois controles fica para P2 futuro.
 
 Declarar PerkId em content/perks.ts como união literal dos seis IDs; PlayerState.perks e World.perkOptions usam PerkId, não string arbitrária. Modifiers declara shotIntervalMultiplier, damageMultiplier, projectileSpeedMultiplier, maxHealthBonus, lifeSteal, recoilMultiplier, spreadMultiplier e splashDamage com defaults explícitos 1 para multiplicadores e 0 para bônus.
 - [ ] **Step 4: Reexecutar, revisar e registrar o GREEN real.**
 
 Repetir `npm run test:unit -- src/play/campaign/perks.test.ts` e os testes dos consumidores alterados. Esperado: todos os casos desta tarefa e regressões afetadas passam. Em arte, executar também export/import e registrar imagens reais; validação de metadados sozinha não atesta aparência. No fim do marco, executar `npm run test:unit`, `npm run lint`, `npm run build` e o smoke do estado implementado. Não rodar a campanha longa a cada mudança mecânica.
 
-**Aceite da unidade:** Perks fazem diferença mensurável, descrição coincide com matemática e a campanha não continua enquanto alguém ainda escolhe.
+**Aceite da unidade:** Perks fazem diferença mensurável, descrição coincide com matemática e a campanha solo só continua após a escolha de P1.
 
 - [ ] **Step 5: Persistir evidência e commit revisável.**
 
@@ -1023,7 +1024,7 @@ O verbo do commit não substitui aceite: gate técnico ou humano ainda pendente 
 
 **Files:** **Criar:** `src/play/ui/Settings.tsx`, `src/play/ui/Results.tsx`, `src/play/ui/Tutorial.tsx`, `src/play/settings/model.ts`, `tests/e2e/menus.spec.ts`. **Modificar:** `src/play/GameApp.tsx`, `src/play/ui/Hud.tsx`.
 
-**Interfaces:** Produz `SettingsV1` com quality, musicVolume, effectsVolume, uiVolume, shake, bloom, hudScale, aimAssistByPlayer, bindings; navegação global sem mouse para gamepads atribuídos.
+**Interfaces:** Produz `SettingsV1` com quality, musicVolume, effectsVolume, uiVolume, shake, bloom, hudScale, aimAssistByPlayer, bindings; a UI de produção edita apenas P1 e é navegável sem mouse se gamepad de P1 for oferecido.
 
 - [ ] **Step 1: Escrever o teste causal inicial e ler as dependências.**
 
@@ -1031,7 +1032,7 @@ O verbo do commit não substitui aceite: gate técnico ou humano ainda pendente 
 import { test, expect } from '@playwright/test';
 test('pausa em solo volta ao HUD sem reiniciar @smoke', async ({ page }) => {
   await page.goto('/?edition=reboot');
-  await page.getByRole('button', { name: 'Jogar sozinho', exact: true }).click();
+  await page.getByRole('button', { name: 'Jogar', exact: true }).click();
   await page.getByRole('button', { name: 'Treinar', exact: true }).click();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('heading', { name: 'Pausado', exact: true })).toBeVisible();
@@ -1050,9 +1051,9 @@ Esperado antes da implementação: falha pela capacidade ausente ou comportament
 
 - [ ] **Step 3: Implementar a unidade e seus casos de borda.**
 
-Settings ficam inicialmente em memória; persistência vem na T22. Unificar textos PT-BR, foco visível e estados disabled/loading/erro. HUD mostra formas distintas além das cores de P1/P2. Pausa oferece continuar, opções, reiniciar e sair com confirmação. Resultado mostra vitória/derrota, tempo, objetivos e resgates da equipe, com revanche em até duas confirmações.
+Settings ficam inicialmente em memória; persistência vem na T22. Unificar textos PT-BR, foco visível e estados disabled/loading/erro. HUD de produção mostra apenas P1 com sinais que não dependem só de cor. Pausa oferece continuar, opções, reiniciar e sair com confirmação. Resultado mostra vitória/derrota, tempo e objetivos de P1, com revanche em até duas confirmações. Remover “Jogar em dupla” e seleção de P2 da navegação de produção; preservar o caminho técnico existente só para desenvolvimento/teste futuro, sem promover coop ao release.
 
-Treino ensina movimento → mira/tiro → dash → resgate; pode ser ignorado e repetido pelo menu. Não exigir mouse quando a pessoa escolheu gamepad. Gamepad de P2 só age globalmente se autorizado como host substituto após desconexão de P1. Testar 1280×720, 1920×1080 e 1440×900; reduzir movimento e brilho não remove sinais essenciais de perigo. Nenhuma configuração pode alterar dano/cap de inimigos exceto dificuldade escolhida antes da run.
+Treino ensina movimento → mira/tiro → dash; pode ser ignorado e repetido pelo menu. Resgate de parceiro sai do tutorial de produção. Não exigir mouse quando P1 escolheu gamepad. Testar 1280×720, 1920×1080 e 1440×900; reduzir movimento e brilho não remove sinais essenciais de perigo. Nenhuma configuração pode alterar dano/cap de inimigos exceto dificuldade escolhida antes da run.
 
 Resultados expõem `data-testid="completed-arenas"` e o texto `3 de 3` na vitória; título exato `Vitória!`; revanche usa o botão `Jogar novamente` e abre lobby com configurações anteriores confirmáveis. O teste T23 confirma iniciar a mesma campanha a partir desse lobby antes de esperar a primeira arena. Ao entrar na arena, anunciar seu nome em heading acessível por 2 s sem remover HUD.
 
@@ -1060,7 +1061,7 @@ Resultados expõem `data-testid="completed-arenas"` e o texto `3 de 3` na vitór
 
 Repetir `npm run test:e2e -- tests/e2e/menus.spec.ts` e os testes dos consumidores alterados. Esperado: todos os casos desta tarefa e regressões afetadas passam. Em arte, executar também export/import e registrar imagens reais; validação de metadados sozinha não atesta aparência. No fim do marco, executar `npm run test:unit`, `npm run lint`, `npm run build` e o smoke do estado implementado. Não rodar a campanha longa a cada mudança mecânica.
 
-**Aceite da unidade:** Menus são parte jogável do produto, não uma exceção que obriga o usuário a pegar o mouse. Resultados e revanche fecham a sessão.
+**Aceite da unidade:** P1 navega sozinho por menus, campanha, resultado e revanche com o dispositivo oferecido. A UI de produção não promete dupla nem exige P2 para avançar.
 
 - [ ] **Step 5: Persistir evidência e commit revisável.**
 
@@ -1211,7 +1212,7 @@ Fonte do gato e do veículo são separadas e compostas na cena de exportação s
   --report artifacts/assets/cat-microkart.json
 ```
 
-`validate_scene.py` extrai nomes, bounds, triângulos após avaliação, materiais, imagens e clips e chama o contrato da T16. `render_previews.py` gera frontal/lateral/3-4/traseira com uma configuração de luz neutra versionada. Exportador aplica os parâmetros confirmados pelo probe, não uma lista de flags presumidas. Repetir import/render com as quatro variantes; montar duas instâncias e confirmar que girar torre ou mudar material de uma não muda a outra. Comparar semanticamente nomes/dimensões/conteúdo entre exportações, não exigir bytes idênticos entre versões.
+`validate_scene.py` extrai nomes, bounds, triângulos após avaliação, materiais, imagens e clips e chama o contrato da T16. `render_previews.py` gera frontal/lateral/3-4/traseira com uma configuração de luz neutra versionada. Exportador aplica os parâmetros confirmados pelo probe, não uma lista de flags presumidas. Repetir import/render com as quatro variantes e conferir cada uma na escala real de gameplay solo. O teste de duas instâncias simultâneas pode preservar a compatibilidade existente, mas não é gate do release P1. Comparar semanticamente nomes/dimensões/conteúdo entre exportações, não exigir bytes idênticos entre versões.
 
 Para assets originais registrar autoria humana/assistida e ferramentas usadas, sem fabricar licença CC0. Preservar `.blend` editado manualmente; um novo script procedural nunca o substitui automaticamente.
 
@@ -1278,13 +1279,13 @@ Usar GLTFLoader da versão Three já instalada. Biblioteca carrega um conjunto a
 
 Mostrar progresso real de carregamento e mensagem em PT-BR com tentar novamente/voltar. Abort de sessão impede atualização após desmontagem. Falha em arquivo, clip ou nó obrigatório não pode gerar tela preta nem iniciar campanha fingindo sucesso. Placeholder é opção explícita de desenvolvimento, rotulada e bloqueada pela checagem de release. `ActorView` apenas lê transformação da simulação e aplica animações; mudar mesh não altera dano, raio ou spawn.
 
-Testar GLB 404, rede abortada, instância desmontada durante load, ausência de muzzle/clip, duas variantes simultâneas e release/refcount zero. Preservar câmera/markers/HUD e comparar cena real com previews. IDs de atores são os IDs monotônicos do core, não UUIDs novos por render.
+Testar GLB 404, rede abortada, instância desmontada durante load, ausência de muzzle/clip, troca das quatro variantes de P1 e release/refcount zero. Preservar câmera/markers/HUD e comparar cena real com previews. IDs de atores são os IDs monotônicos do core, não UUIDs novos por render.
 
 - [ ] **Step 4: Reexecutar, revisar e registrar o GREEN real.**
 
 Repetir `npm run test:unit -- src/play/assets/catalog.test.ts` e os testes dos consumidores alterados. Esperado: todos os casos desta tarefa e regressões afetadas passam. Em arte, executar também export/import e registrar imagens reais; validação de metadados sozinha não atesta aparência. No fim do marco, executar `npm run test:unit`, `npm run lint`, `npm run build` e o smoke do estado implementado. Não rodar a campanha longa a cada mudança mecânica.
 
-**Aceite da unidade:** Duas instâncias animam independentemente e um erro de asset tem saída utilizável. Nenhum herói, inimigo ou chefe final depende de geometria placeholder.
+**Aceite da unidade:** P1 e os inimigos/chefe usam os GLBs finais, animam corretamente e um erro de asset tem saída utilizável. Nenhum ator final depende de geometria placeholder.
 
 - [ ] **Step 5: Persistir evidência e commit revisável.**
 
@@ -1317,7 +1318,7 @@ it('recusa spawn dentro de cobertura sólida', () => {
   const errors = validateLevel({ id: 'garage',
     bounds: { min: { x: -20, z: -16 }, max: { x: 20, z: 16 } },
     colliders: [{ min: { x: -1, z: -1 }, max: { x: 1, z: 1 } }],
-    playerSpawns: [{ x: 0, z: 0 }, { x: 4, z: 0 }],
+    playerSpawns: [{ x: 0, z: 0 }],
     enemySpawns: [{ x: 15, z: 10 }],
     objective: { x: 0, z: 8 }, exit: { x: 0, z: 12 } });
   expect(errors).toContain('player-spawn-blocked:0');
@@ -1338,11 +1339,11 @@ Arenas planas e compactas, com área útil de referência 40×32 m. Garagem: ban
 
 Arte vem de um kit coeso e reutiliza materiais/props. Kenney/Quaternius podem fornecer base quando a licença do item específico for documentada, mas não tornam aquisição externa obrigatória. Evitar fotorealismo e texturas grandes que destroem a coerência e o orçamento. Referências `.tmp` da branch não são assets de produção e não são copiadas.
 
-No Blender, empties `NK_spawn_p1/p2`, `NK_enemy_spawn_*`, `NK_objective`, `NK_exit` e objetos `NK_collider_*` geram os metadados. Aplicar transformação de mundo antes de converter eixos. Colliders são caixas alinhadas ao runtime; caixa rotacionada deve ser rejeitada ou conscientemente convertida e revisada, nunca aproximada silenciosamente para uma barreira invisível. Não publicar objetos de collider como decoração.
+No Blender, empties `NK_spawn_p1`, `NK_enemy_spawn_*`, `NK_objective`, `NK_exit` e objetos `NK_collider_*` geram os metadados. `NK_spawn_p2` é opcional e não entra na validação da v1. Aplicar transformação de mundo antes de converter eixos. Colliders são caixas alinhadas ao runtime; caixa rotacionada deve ser rejeitada ou conscientemente convertida e revisada, nunca aproximada silenciosamente para uma barreira invisível. Não publicar objetos de collider como decoração.
 
-Validar finitude, bounds min<max, spawn livre para raio 0,85, pelo menos dois spawns de jogador, todos os caminhos de spawn aos objetivos alcançáveis no NavGrid, largura suficiente para dash e nenhuma cobertura em cima da zona. O renderer e a simulação carregam a mesma revisão de JSON. Export incluir hash do GLB e metadata no manifesto. Testar a versão inválida do fixture acima e os três arquivos reais.
+Validar finitude, bounds min<max, spawn livre para raio 0,85, exatamente um spawn obrigatório de P1, caminho desse spawn aos objetivos alcançável no NavGrid, largura suficiente para dash e nenhuma cobertura em cima da zona. O renderer e a simulação carregam a mesma revisão de JSON. Export incluir hash do GLB e metadata no manifesto. Testar a versão inválida do fixture acima e os três arquivos reais.
 
-Prova visual: screenshot de gameplay com dois jogadores em cada arena, overlays de colisão ativados em desenvolvimento e depois desligados. Câmera deve manter ambos legíveis nos extremos e não ampliar indefinidamente. Não usar névoa/bloom para esconder caminhos mal desenhados.
+Prova visual: screenshot de gameplay solo com P1 em cada arena, overlays de colisão ativados em desenvolvimento e depois desligados. Câmera deve manter P1 e os perigos legíveis nos extremos sem ampliar indefinidamente. Não usar névoa/bloom para esconder caminhos mal desenhados.
 
 - [ ] **Step 4: Reexecutar, revisar e registrar o GREEN real.**
 
@@ -1469,11 +1470,11 @@ Esperado antes da implementação: falha pela capacidade ausente ou comportament
 
 Criar AudioContext somente após gesto real em iniciar/ativar áudio, não ao importar módulo. unlock retorna false quando navegador bloquear; UI informa que som está desligado e permite tentar novamente sem impedir a partida. Nunca aguardar áudio para executar simulação.
 
-Três buses separados: música, efeitos e interface, com gain mestre limitado. Música eletrônica/house instrumental original ou CC0 comprovada, com loop limpo e trecho de tensão do chefe; não usar gravações/letras comerciais. Efeitos distinguem disparos, impacto, perigo, queda, resgate, perk e vitória. Limitar polifonia e baixar música sob sinais essenciais. Respeitar volume zero e redução de efeitos.
+Três buses separados: música, efeitos e interface, com gain mestre limitado. Música eletrônica/house instrumental original ou CC0 comprovada, com loop limpo e trecho de tensão do chefe; não usar gravações/letras comerciais. Efeitos distinguem disparos, impacto, perigo, derrota, perk e vitória. O cue de resgate existente fica fora do aceite solo. Limitar polifonia e baixar música sob sinais essenciais. Respeitar volume zero e redução de efeitos.
 
 O AudioDirector guarda exatamente um stop da música, interrompe fontes/timers em pause/stop/dispose e desfaz assinaturas. Se suspender contexto, considerar fontes que já estavam agendadas: ao retomar, não tocar fila de tiros antiga. AudioBus pode reaproveitar buffers carregados, nunca contextos abandonados. Eventos têm IDs; desduplicação não altera a contagem de hits do core.
 
-Testar start/pause/resume/stop idempotentes, 20 reinícios, falha de decode, volume fora de faixa clamped e rejeição do resume do AudioContext. Registrar fontes/licenças/hashes de áudio no mesmo manifesto. Validar ouvindo no Mac com os volumes de ambos os HUDs, não só com mocks.
+Testar start/pause/resume/stop idempotentes, 20 reinícios, falha de decode, volume fora de faixa clamped e rejeição do resume do AudioContext. Registrar fontes/licenças/hashes de áudio no mesmo manifesto. Validar ouvindo no Mac durante uma campanha solo completa, não só com mocks.
 
 - [ ] **Step 4: Reexecutar, revisar e registrar o GREEN real.**
 
@@ -1532,7 +1533,7 @@ Esperado antes da implementação: falha pela capacidade ausente ou comportament
 
 - [ ] **Step 3: Implementar a unidade e seus casos de borda.**
 
-Validar somente campos permitidos, tipos e intervalos. version=1, volumes em [0,1], hudScale em [0.8,1.5], quality no enum e booleans reais; bindings só chaves suportadas sem atribuir o mesmo comando físico conflitante aos dois slots. Evitar spread de objeto desconhecido sobre defaults. Não aceitar __proto__/constructor/prototype como campos úteis. Limitar bestRuns a 20 registros finitos e não negativos com arena/campaign/difficulty reconhecidos.
+Validar somente campos permitidos, tipos e intervalos. version=1, volumes em [0,1], hudScale em [0.8,1.5], quality no enum e booleans reais; a UI da v1 persiste apenas bindings de P1. Dados antigos de P2 podem ser ignorados de forma segura, sem bloquear a abertura da edição solo. Evitar spread de objeto desconhecido sobre defaults. Não aceitar __proto__/constructor/prototype como campos úteis. Limitar bestRuns a 20 registros finitos e não negativos com arena/campaign/difficulty reconhecidos.
 
 Capturar exceções tanto em leitura quanto escrita. Na falha, manter sessão em memória e mostrar aviso discreto 'As preferências não puderam ser salvas neste navegador'. Não repetir aviso a cada frame. Debounce apenas escritas de interface; flush ao fechar opções sem bloquear render. Reiniciar run preserva preferências e reseta estado de combate integralmente; nenhum HP, inimigo, perk temporário ou botão segurado é restaurado do storage.
 
@@ -1558,26 +1559,26 @@ O verbo do commit não substitui aceite: gate técnico ou humano ainda pendente 
 
 ---
 
-## Task 23: Provar a campanha completa e as combinações de controle
+## Task 23: Provar a campanha solo completa e os controles de P1
 
 **ID:** T23 · **Marco:** M5 · **Depende de:** T22
 
-**Files:** **Criar:** `tests/e2e/campaign.spec.ts`, `tests/e2e/helpers/campaignBot.ts`, `tests/integration/replay.test.ts`, `docs/proofs/reboot/CONTROLS-MATRIX.md`. **Modificar:** `tests/e2e/helpers/virtualInput.ts`, `playwright.config.ts`.
+**Files:** **Criar:** `tests/e2e/campaign.spec.ts`, `tests/e2e/helpers/campaignBot.ts`, `tests/integration/replay.test.ts`, `docs/proofs/reboot/CONTROLS-MATRIX.md`. **Modificar:** `tests/e2e/support/virtualInput.ts`, `playwright.config.ts`.
 
-**Interfaces:** Produz `playCampaign(page,{players,difficulty,seed}):Promise<void>` usando apenas InputFrame e UI. Bridge pode ler snapshot contendo posições/HP/fase/colliders, nunca alterar HP, objetivo, RNG, posição ou vitória. Bot decide direção/tiro/dash/seleção com as mesmas regras de jogador.
+**Interfaces:** Produz `playCampaign(page,{players:1,difficulty,seed}):Promise<void>` usando apenas InputFrame e UI de P1. Bridge pode ler snapshot contendo posições/HP/fase/colliders, nunca alterar HP, objetivo, RNG, posição ou vitória. Bot decide direção/tiro/dash/seleção com as mesmas regras do jogador.
 
 - [ ] **Step 1: Escrever o teste causal inicial e ler as dependências.**
 
 ```ts
 import { test, expect } from '@playwright/test';
 import { playCampaign } from './helpers/campaignBot';
-test('dupla conclui três arenas por ações de jogo', async ({ page }) => {
+test('P1 conclui três arenas por ações de jogo', async ({ page }) => {
   test.setTimeout(15 * 60 * 1000);
-  await playCampaign(page, { players: 2, difficulty: 'relaxed', seed: 42 });
+  await playCampaign(page, { players: 1, difficulty: 'relaxed', seed: 42 });
   await expect(page.getByRole('heading', { name: 'Vitória!', exact: true })).toBeVisible();
   await expect(page.getByTestId('completed-arenas')).toHaveText('3 de 3');
   await page.getByRole('button', { name: 'Jogar novamente', exact: true }).click();
-  await page.getByRole('button', { name: 'Iniciar campanha', exact: true }).click();
+  await page.getByRole('button', { name: 'Começar campanha', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Garagem', exact: true })).toBeVisible();
 });
 ```
@@ -1592,19 +1593,19 @@ Esperado antes da implementação: falha pela capacidade ausente ou comportament
 
 - [ ] **Step 3: Implementar a unidade e seus casos de borda.**
 
-O bot deve navegar por NavGrid a partir do snapshot, escolher o inimigo visível mais próximo, mandar vetores unitários de movimento/mira, manter fire e usar revive por proximidade. Na defesa permanece dentro da zona e remove inimigos que a contestam. No boss evita área telegrafada e atira na recuperação. Não importa funções que escrevem World no browser. Se travar, diagnosticar regras e bot separadamente; não resolver com um setter de fase nem desativando dano no teste de campanha.
+O bot deve navegar por NavGrid a partir do snapshot, escolher o inimigo visível mais próximo, mandar vetores unitários de movimento/mira e manter fire. Na defesa P1 permanece dentro da zona e remove inimigos que a contestam. No boss evita área telegrafada e atira na recuperação. Não importa funções que escrevem World no browser. Se travar, diagnosticar regras e bot separadamente; não resolver com um setter de fase nem desativando dano no teste de campanha.
 
-Semente de E2E é configuração de criação antes da partida, não alteração de RNG durante ela. Training, difficulty e party size são escolhas públicas; fixture interna para unitário não é vitória E2E. Estado de vitória só é observado pelo DOM e snapshot read-only. Verificar uma derrota real separada mantendo inputs neutros em campanha, reinício limpa inimigos/perks/score, e revanche mantém preferências. O teste demorado roda no gate da campanha, não em cada tarefa; smoke fica com abertura/dupla/movimento/pausa/resgate.
+Semente de E2E é configuração de criação antes da partida, não alteração de RNG durante ela. Training e difficulty são escolhas públicas; a campanha de produção usa party size 1. Fixture interna para unitário não é vitória E2E. Estado de vitória só é observado pelo DOM e snapshot read-only. Verificar uma derrota real separada mantendo inputs neutros em campanha, reinício limpa inimigos/perks/score, e revanche mantém preferências. O teste demorado roda no gate da campanha, não em cada tarefa; smoke fica com abertura solo, movimento, tiro, pausa e derrota.
 
-Replay em integração: mesma sequência de InputFrame por tick e seed produz mesmo estado de combate com render alimentado em 30/60/120 Hz durante 10 s; excluir métricas de render e IDs de efeitos cosméticos da comparação. Injetar 10 s de stall e verificar limite de catch-up, não exigir que relógio avance os 10 s descartados. Cobrir perda de foco, soltar tecla fora da janela, gamepad desconectado e retorno de index ocupado.
+Replay em integração: mesma sequência de InputFrame de P1 por tick e seed produz mesmo estado de combate com render alimentado em 30/60/120 Hz durante 10 s; excluir métricas de render e IDs de efeitos cosméticos da comparação. Injetar 10 s de stall e verificar limite de catch-up, não exigir que relógio avance os 10 s descartados. Cobrir perda de foco, soltar tecla fora da janela e, se gamepad de P1 for oferecido, desconexão/retorno sem input preso.
 
-Matriz física separada: Mac real + navegador e versão registrados, 2 gamepads identificados; teclado/mouse+gamepad; teclado compartilhado com simultaneidade; remap de dispositivo não standard quando disponível. Browser automation testa adaptador com pads virtuais, não prova Bluetooth, mapeamento do SO ou ghosting. Onde faltar hardware, escrever PENDENTE, sem aprovar por extrapolação. Chromium é alvo primário; Safari só recebe selo de compatibilidade após a mesma prova física reduzida.
+Matriz física desta v1: Mac real + navegador e versão registrados; P1 com teclado/mouse deve concluir menu, campanha, pausa e revanche. Se a edição de produção oferecer gamepad standard para P1, registrar modelo e provar a mesma jornada essencial com um controle. Browser automation com pad virtual não prova Bluetooth nem mapeamento do SO. Dois gamepads, teclado/mouse + gamepad em dupla, teclado compartilhado e remap não standard ficam em uma seção `FUTURO_P2`, sem gate da v1 e sem selo de compatibilidade. Chromium é alvo primário; Safari só recebe selo após prova real reduzida.
 
 - [ ] **Step 4: Reexecutar, revisar e registrar o GREEN real.**
 
 Repetir `npm run test:e2e -- tests/e2e/campaign.spec.ts` e os testes dos consumidores alterados. Esperado: todos os casos desta tarefa e regressões afetadas passam. Em arte, executar também export/import e registrar imagens reais; validação de metadados sozinha não atesta aparência. No fim do marco, executar `npm run test:unit`, `npm run lint`, `npm run build` e o smoke do estado implementado. Não rodar a campanha longa a cada mudança mecânica.
 
-**Aceite da unidade:** Uma campanha automatizada atravessa regras reais e os controles efetivamente usados pelo casal são testados no Mac. Nenhum screenshot isolado substitui essa prova.
+**Aceite da unidade:** Uma campanha solo automatizada atravessa regras reais; teclado/mouse de P1 e eventual gamepad oferecido são testados no Mac. Nenhum screenshot isolado substitui essa prova.
 
 - [ ] **Step 5: Persistir evidência e commit revisável.**
 
@@ -1661,7 +1662,7 @@ Contadores derivam de registros reais de subscribe/add/remove/dispose e são zer
 
 Benchmark no Mac-alvo: registrar chip/RAM, SO, browser/versão, resolução 1920×1080, DPR1, qualidade média e cenário de cap 24 inimigos. Aquecer 60 s, medir 180 s e reportar mediana/p95 de frame e travamentos. Meta 60 FPS e p95<=20 ms, não resultado já alcançado. HUD/câmera/áudio devem continuar usáveis. Se falhar, primeiro reduzir draw calls, sombras, transparências e alocações; não reduzir conteúdo de combate silenciosamente. Guardar screenshot do cenário e arquivo de métricas.
 
-Depois dos gates técnicos, App default muda para GameApp e modo de desenvolvimento/e2e ainda consegue inspecionar legado enquanto necessário. Produção não inclui o caminho de import do legado nem test bridge; confirmar com busca do bundle. Remover dependência só depois de grep comprovar nenhum consumidor em código/testes/docs vigentes. Testes do TPS que descrevem comportamento substituído são marcados como arquivo histórico ou migrados com justificativa escrita. Não sobrescrever manual/art/fontes.
+Depois dos gates técnicos, App default muda para GameApp e modo de desenvolvimento/e2e ainda consegue inspecionar legado enquanto necessário. O menu de produção abre somente a jornada solo; “Jogar em dupla”, seleção de P2, resgate e HUD P2 ficam indisponíveis no build distribuído, sem apagar o código histórico antes da futura fase cooperativa. Produção não inclui o caminho de import do legado nem test bridge; confirmar com busca do bundle. Remover dependência só depois de grep comprovar nenhum consumidor em código/testes/docs vigentes. Testes do TPS que descrevem comportamento substituído são marcados como arquivo histórico ou migrados com justificativa escrita. Não sobrescrever manual/art/fontes.
 
 Atualizar README e GAME_MANUAL para regras reais novas; adicionar tabela KEEP/PORT/REPLACE/ARCHIVE com commit de origem. Apagar `.tmp` do pacote final, não reescrever histórico. Não fazer force-push/merge. Reexecutar unitário, lint, build e smoke após mudar entrypoint. Playtest humano pode permanecer pendente sem bloquear a produção do candidato, mas impede chamá-lo de entrega aceita.
 
@@ -1685,7 +1686,7 @@ O verbo do commit não substitui aceite: gate técnico ou humano ainda pendente 
 
 ---
 
-## Task 25: Empacotar a versão jogável local e fechar o aceite do casal
+## Task 25: Empacotar a versão solo jogável local e fechar o aceite de P1
 
 **ID:** T25 · **Marco:** M5 · **Depende de:** T24
 
@@ -1722,9 +1723,9 @@ Porta inicial 4173, fallback até 4183; escolher somente porta livre, nunca mata
 
 `package-release.mjs` verifica manifesto inteiro, rejeita status placeholder, licença/prova ausente, SHA divergente, asset remoto e qualquer referência à test bridge. Copia dist, servidor, launcher, CREDITS.md e COMO-JOGAR.md para destino novo dentro de artifacts/releases; nunca sobrescreve release existente sem nome versionado. Fontes .blend ficam no repositório, não são necessárias ao jogador. Runtime não precisa de MCP, internet, Blender, conta ou chave de API.
 
-Release teste: build normal, iniciar servidor, abrir localhost, selecionar dois jogadores, jogar e reiniciar; desconectar a internet para confirmar que todos os assets/sons/fontes são locais. Dev server não é prova de release. Executar guia literalmente a partir do diretório empacotado. Permissão executável e gate/quarentena do macOS são verificados no Mac, sem comandos para desabilitar segurança global.
+Release teste: build normal, iniciar servidor, abrir localhost, selecionar P1, jogar a campanha até vitória ou derrota e reiniciar; desconectar a internet para confirmar que todos os assets/sons/fontes são locais. Dev server não é prova de release. Executar guia literalmente a partir do diretório empacotado. Permissão executável e gate/quarentena do macOS são verificados no Mac, sem comandos para desabilitar segurança global.
 
-Aceite final com Marco e Yasmin: sessão de 30 minutos, ambos conseguem entrar/navegar/controlar; cada um conclui um resgate; três arenas e chefe têm objetivos entendidos; vitória/derrota/revanche funcionam; ninguém precisa editar código ou abrir Blender. Colher avaliações separadas sobre conforto de controle, leitura de perigo e vontade de repetir. Não inventar nota nem feedback. Se algo essencial falhar, registrar problema reproduzível e voltar à tarefa dona. Sem disponibilidade do casal, entregar candidato com ACEITE_HUMANO_PENDENTE, não 'diversão comprovada'. Publicação, merge e instalação externa continuam fora desta autorização de planejamento.
+Aceite final solo com Marco: sessão de aproximadamente 30 minutos, iniciada pelo launcher sem editar código ou abrir Blender. P1 conclui as três arenas e o chefe, entende objetivos, consegue provocar derrota e usar revanche. Registrar em palavras de Marco conforto de controle, leitura de perigo, o que divertiu, confundiu ou irritou, e vontade de repetir. Não inventar nota nem feedback. Se algo essencial falhar, registrar problema reproduzível e voltar à tarefa dona. Sem sessão real, entregar candidato com ACEITE_HUMANO_PENDENTE, não 'diversão comprovada'. Playtest de Yasmin com P2 pertence à fase futura. Publicação, merge e instalação externa continuam fora desta autorização de planejamento.
 
 Adicionar declaração .d.mts do módulo .mjs para o teste TypeScript sem usar any, incluindo `resolveAssetPath(root:string,requestPath:string):string`. CREDITS.md é gerado do manifesto por package-release e auditado antes do empacotamento.
 
@@ -1734,7 +1735,7 @@ Adicionar declaração .d.mts do módulo .mjs para o teste TypeScript sem usar a
 
 Repetir `npm run test:unit -- tests/release/package.test.ts` e os testes dos consumidores alterados. Esperado: todos os casos desta tarefa e regressões afetadas passam. Em arte, executar também export/import e registrar imagens reais; validação de metadados sozinha não atesta aparência. No fim do marco, executar `npm run test:unit`, `npm run lint`, `npm run build` e o smoke do estado implementado. Não rodar a campanha longa a cada mudança mecânica.
 
-**Aceite da unidade:** Entrega é um jogo de duas pessoas que abre pelo launcher e fecha uma sessão completa. O aceite técnico e o aceite humano são registros distintos.
+**Aceite da unidade:** Entrega é um jogo solo para P1 que abre pelo launcher e fecha uma campanha completa. O aceite técnico e o aceite humano são registros distintos.
 
 - [ ] **Step 5: Persistir evidência e commit revisável.**
 
@@ -1754,12 +1755,12 @@ O verbo do commit não substitui aceite: gate técnico ou humano ainda pendente 
 
 | Requisito | Tarefas proprietárias |
 |---|---|
-| G01 — duas pessoas locais, escopo sem rede | T02, T07, T09, T23, T25 |
+| G01 — campanha solo local, escopo sem rede | T02, T09, T12–T15, T23, T25 |
 | G02 — runtime existente e Blender externo | T01, T08, T16–T19, T24–T25 |
 | G03 — uma autoridade do combate | T02–T06, T08, T10, T20 |
 | G04 — tick, seed, pausa e IDs | T02–T03, T05, T07, T12–T14, T23 |
-| G05 — controles e prova física | T07, T09–T10, T15, T23, T25 |
-| G06 — estado por jogador e sem friendly fire | T02, T05–T07, T14, T23 |
+| G05 — controle e prova física de P1 | T07, T09–T10 como base; T15, T23, T25 como aceite solo |
+| G06 — estado e resultado de P1 | T02, T05–T06 como base; T12–T14, T23 como campanha solo |
 | G07 — conteúdo final delimitado | T05, T11–T14, T17–T19 |
 | G08 — arte editável e proveniência | T16–T19, T25 |
 | G09 — interface PT-BR e menus | T09–T10, T14–T15, T21–T23, T25 |
@@ -1769,13 +1770,17 @@ O verbo do commit não substitui aceite: gate técnico ou humano ainda pendente 
 
 ### Gates que nenhuma IA pode assinar por adivinhação
 
-- Hardware: controles físicos e teclado do casal funcionam no navegador/OS reais.
+- Hardware: teclado/mouse de P1 e eventual gamepad de P1 oferecido funcionam no navegador/OS reais.
 - Arte: quatro gatos e cenários são legíveis no tamanho de jogo e têm fontes válidas.
 - Performance: medições do Mac, resolução e cenário declarados, não FPS de CI.
-- Diversão: feedback dos dois jogadores sobre controles, colaboração, clareza e repetição.
+- Diversão: feedback de Marco após jogar uma campanha solo completa sobre controles, clareza e vontade de repetir.
 
 ### Critério terminal
 
-As 25 tarefas com seus gates técnicos passam; o candidato de produção executa o fluxo completo offline por localhost; existe fonte Blender e documentação de licença; Marco e Yasmin completam a sessão de aceite. Sem o último item, o estado é **CANDIDATO_TÉCNICO_COM_ACEITE_HUMANO_PENDENTE**, não projeto abandonado nem diversão comprovada.
+As T01–T10 históricas permanecem com seus recibos; as T11–T25 passam nos gates solo revisados. O candidato de produção executa a campanha de P1 inteira offline por localhost, com fonte Blender e documentação de licença. Marco completa a sessão solo de aceite. Sem essa sessão, o estado é **CANDIDATO_TÉCNICO_COM_ACEITE_HUMANO_PENDENTE**. P2 só entra em um plano posterior com testes de cooperação e dois controles.
 
 Não aumentar o escopo para online, quatro jogadores, engine nova ou editor de mapas antes desse fechamento. Esses seriam outros produtos/planos, não pendências escondidas desta v1.
+
+### Futuro P2 — fora das 25 tarefas da v1
+
+Depois do release solo, um plano próprio deve: (1) reativar a entrada de P2 e a UI de dois slots, com confirmação por jogador; (2) rever balanceamento de spawns, chefe, defesa, câmera, HUD, resgate e escolhas de perks para cooperação; (3) executar campanha completa em dupla pelas regras reais, sem setters de vitória; (4) provar no Mac real teclado compartilhado, teclado/mouse + gamepad e dois gamepads, incluindo desconexão, ghosting e retorno; (5) fazer playtest com Marco e Yasmin antes de chamar o modo de duas pessoas de aceito. O código/testes de T01–T10 são ponto de partida técnico, não validação dessas cinco obrigações.
