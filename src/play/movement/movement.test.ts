@@ -138,6 +138,15 @@ describe('movimento autoritativo dos jogadores', () => {
     expect(Math.hypot(player(world, 'p1').position.x, player(world, 'p1').position.z)).toBeGreaterThan(1);
   });
 
+  it('resolve uma sobreposição para dentro quando a caixa encosta no limite', () => {
+    const world = makeWorld();
+    world.bounds = { min: { x: 0, z: -4 }, max: { x: 4, z: 4 } };
+    world.colliders.push({ min: { x: 0, z: -3 }, max: { x: 1.8, z: 3 } });
+    player(world, 'p1').position = { x: 0.85, z: 0 };
+    ticks(world, 60, { p1: input({ move: { x: 1, z: 0 } }) });
+    expect(player(world, 'p1').position.x).toBeGreaterThan(1.8 + 0.85);
+  });
+
   it('não deixa o círculo penetrar na junção de duas paredes', () => {
     const world = makeWorld();
     const vertical: Aabb = { min: { x: 2, z: -2 }, max: { x: 2.2, z: 1 } };

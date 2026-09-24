@@ -72,7 +72,7 @@ function stepPlayer(player: PlayerState, frame: InputFrame[PlayerState['id']], w
   const dashing = player.dashRemaining > 0;
   if (!dashing) player.velocity = approach(player.velocity, desired, ACCELERATION * STEP_SECONDS);
   const intendedDelta = { x: player.velocity.x * STEP_SECONDS, z: player.velocity.z * STEP_SECONDS };
-  const moved = slideCircle(player.position, intendedDelta, PLAYER_RADIUS, world.colliders);
+  const moved = slideCircle(player.position, intendedDelta, PLAYER_RADIUS, world.colliders, world.bounds);
   player.position = moved;
   constrainToBounds(player.position, player.velocity, world);
 

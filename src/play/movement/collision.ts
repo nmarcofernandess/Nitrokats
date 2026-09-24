@@ -19,15 +19,25 @@ function pointInside(point: Vec2, box: Aabb): boolean {
   return point.x >= box.min.x && point.x <= box.max.x && point.z >= box.min.z && point.z <= box.max.z;
 }
 
-function pushOut(point: Vec2, radius: number, box: Aabb): Vec2 {
+function insideBounds(point: Vec2, radius: number, bounds: Aabb): boolean {
+  return point.x >= bounds.min.x + radius - EPSILON && point.x <= bounds.max.x - radius + EPSILON &&
+    point.z >= bounds.min.z + radius - EPSILON && point.z <= bounds.max.z - radius + EPSILON;
+}
+
+function separatesFromBox(point: Vec2, radius: number, box: Aabb): boolean {
+  return distanceSquared(point, closestPoint(point, box)) >= (radius - EPSILON) ** 2;
+}
+
+function pushOut(point: Vec2, radius: number, box: Aabb, bounds?: Aabb): Vec2 {
   const nearest = closestPoint(point, box);
-  let dx = point.x - nearest.x;
-  let dz = point.z - nearest.z;
+  const dx = point.x - nearest.x;
+  const dz = point.z - nearest.z;
   const distance = Math.hypot(dx, dz);
   if (!pointInside(point, box) && distance >= radius) return point;
   if (distance > EPSILON) {
     const depth = radius - distance + EPSILON;
-    return { x: point.x + dx / distance * depth, z: point.z + dz / distance * depth };
+    const separated = { x: point.x + dx / distance * depth, z: point.z + dz / distance * depth };
+    if (!bounds || insideBounds(separated, radius, bounds)) return separated;
   }
 
   const edges = [
@@ -36,13 +46,21 @@ function pushOut(point: Vec2, radius: number, box: Aabb): Vec2 {
     { distance: point.z - box.min.z, x: 0, z: -1 },
     { distance: box.max.z - point.z, x: 0, z: 1 },
   ];
-  const edge = edges.reduce((best, candidate) => candidate.distance < best.distance ? candidate : best);
-  dx = edge.x;
-  dz = edge.z;
-  return {
-    x: point.x + dx * (edge.distance + radius + EPSILON),
-    z: point.z + dz * (edge.distance + radius + EPSILON),
-  };
+  const separations = edges.map(edge => ({
+    position: {
+      x: point.x + edge.x * (edge.distance + radius + EPSILON),
+      z: point.z + edge.z * (edge.distance + radius + EPSILON),
+    },
+  }));
+  const feasible = separations.filter(candidate => separatesFromBox(candidate.position, radius, box) &&
+    (!bounds || insideBounds(candidate.position, radius, bounds)));
+  const candidates = feasible.length ? feasible : separations;
+  const { position } = candidates.reduce((best, candidate) => {
+    const bestDistance = Math.hypot(best.position.x - point.x, best.position.z - point.z);
+    const candidateDistance = Math.hypot(candidate.position.x - point.x, candidate.position.z - point.z);
+    return candidateDistance < bestDistance ? candidate : best;
+  });
+  return position;
 }
 
 /** Returns the first normalized time at which a swept circle touches an AABB. */
@@ -89,11 +107,17 @@ export function sweepCircleAabb(start: Vec2, end: Vec2, radius: number, box: Aab
 }
 
 /** Sweeps a circle through boxes and removes inward motion at up to three contacts. */
-export function slideCircle(position: Vec2, delta: Vec2, radius: number, boxes: readonly Aabb[]): Vec2 {
+export function slideCircle(
+  position: Vec2,
+  delta: Vec2,
+  radius: number,
+  boxes: readonly Aabb[],
+  bounds?: Aabb,
+): Vec2 {
   let current = { ...position };
   let remaining = { ...delta };
   for (let pass = 0; pass < 3; pass += 1) {
-    for (const box of boxes) current = pushOut(current, radius, box);
+    for (const box of boxes) current = pushOut(current, radius, box, bounds);
     const end = { x: current.x + remaining.x, z: current.z + remaining.z };
     let earliest: { t: number; box: Aabb } | null = null;
     for (const box of boxes) {
