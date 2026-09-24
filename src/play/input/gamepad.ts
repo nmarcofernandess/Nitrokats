@@ -25,12 +25,11 @@ export function applyDeadzone(x: number, y: number, threshold: number): { x: num
   if (!Number.isFinite(threshold) || threshold < 0 || threshold >= 1) {
     throw new RangeError('threshold deve estar no intervalo [0, 1)');
   }
-  const safeX = Number.isFinite(x) ? x : 0;
-  const safeY = Number.isFinite(y) ? y : 0;
-  const radius = Math.hypot(safeX, safeY);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return { x: 0, y: 0 };
+  const radius = Math.hypot(x, y);
   if (!Number.isFinite(radius) || radius <= threshold) return { x: 0, y: 0 };
   const scaled = Math.min(1, (radius - threshold) / (1 - threshold));
-  return { x: safeX / radius * scaled, y: safeY / radius * scaled };
+  return { x: x / radius * scaled, y: y / radius * scaled };
 }
 
 export function readStandardPad(sample: StandardPadSample): PlayerInput {

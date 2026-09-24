@@ -37,6 +37,8 @@ describe('readStandardPad', () => {
     expect(readStandardPad({ axes: [], buttons: [] }).aim).toEqual({ x: 0, z: 0 });
     expect(applyDeadzone(0.18, 0, 0.18)).toEqual({ x: 0, y: 0 });
     expect(applyDeadzone(0.59, 0, 0.18).x).toBeCloseTo(0.5);
+    expect(applyDeadzone(Number.POSITIVE_INFINITY, 0.8, 0.18)).toEqual({ x: 0, y: 0 });
+    expect(applyDeadzone(Number.NaN, 0.8, 0.18)).toEqual({ x: 0, y: 0 });
     expect(() => applyDeadzone(0, 0, 1)).toThrow(RangeError);
   });
 
@@ -161,6 +163,17 @@ describe('InputHub', () => {
     hub.dispose();
   });
 
+  it('clear resets sticky aim so a new campaign cannot inherit the previous direction', () => {
+    const { hub, setPads } = harness([pad('A')]);
+    hub.assign('p1', { type: 'gamepad', index: 0 });
+    setPads([pad('A', [], [0, 0, 1, 0])]); hub.poll();
+    expect(hub.consumeFrame().p1!.aim.x).toBeCloseTo(1);
+    hub.clear();
+    setPads([pad('A')]); hub.poll();
+    expect(hub.consumeFrame().p1!.aim).toEqual({ x: 0, z: 0 });
+    hub.dispose();
+  });
+
   it('clear masks every held combat control until each physical control is released', () => {
     const { hub, setPads } = harness([pad('A')]);
     hub.assign('p1', { type: 'gamepad', index: 0 });
@@ -270,5 +283,55 @@ describe('InputHub', () => {
     expect(runtime.world.tick).toBe(2);
     expect(runtime.world.players[0].dashRemaining).toBe(0);
     runtime.dispose();
+  });
+
+  it('runtime restart clears input-session aim before a new campaign', () => {
+    const { hub, setPads } = harness([pad('A')]);
+    hub.assign('p1', { type: 'gamepad', index: 0 });
+    const runtime = new GameRuntime({
+      seed: 4, mode: 'training', difficulty: 'normal',
+      players: [{ id: 'p1', catId: 'anakin', weaponId: 'pulse_rifle' }],
+    }, hub);
+    setPads([pad('A', [0, 0, 0, 0, 0, 0, 0, 0.8], [0, 0, 1, 0])]);
+    runtime.advance(1 / 60);
+    expect(runtime.world.players[0].aim.x).toBeCloseTo(1);
+    runtime.restart();
+    setPads([pad('A')]);
+    runtime.advance(1 / 60);
+    setPads([pad('A', [0, 0, 0, 0, 0, 0, 0, 0.8])]);
+    runtime.advance(1 / 60);
+    expect(runtime.world.players[0].aim).toEqual({ x: 0, z: 1 });
+    runtime.dispose();
+  });
+
+  it('runtime owns and disposes hub listeners exactly once while legacy function providers remain valid', () => {
+    const target = new EventTarget();
+    const hub = new InputHub({ eventTarget: target, getGamepads: () => [] });
+    hub.assign('p1', { type: 'keyboard-shared', profile: 'p1' });
+    const disposeSpy = vi.spyOn(hub, 'dispose');
+    const runtime = new GameRuntime({
+      seed: 4, mode: 'training', difficulty: 'normal',
+      players: [{ id: 'p1', catId: 'anakin', weaponId: 'pulse_rifle' }],
+    }, hub);
+    const removeListener = vi.spyOn(target, 'removeEventListener');
+    runtime.dispose();
+    runtime.dispose();
+    expect(removeListener).toHaveBeenCalledWith('keydown', expect.any(Function));
+    expect(removeListener).toHaveBeenCalledWith('keyup', expect.any(Function));
+    expect(removeListener).toHaveBeenCalledWith('blur', expect.any(Function));
+    expect(removeListener).toHaveBeenCalledWith('visibilitychange', expect.any(Function));
+    target.dispatchEvent(browserEvent('keydown', { code: 'KeyW', repeat: false }));
+    hub.poll();
+    expect(hub.consumeFrame().p1).toBeUndefined();
+    expect(disposeSpy).toHaveBeenCalledTimes(1);
+
+    const legacyInput = Object.assign(() => ({}), { clear: vi.fn() });
+    const legacyRuntime = new GameRuntime({
+      seed: 4, mode: 'training', difficulty: 'normal',
+      players: [{ id: 'p1', catId: 'anakin', weaponId: 'pulse_rifle' }],
+    }, legacyInput);
+    expect(() => legacyRuntime.advance(1 / 60)).not.toThrow();
+    legacyRuntime.dispose();
+    expect(legacyInput.clear).toHaveBeenCalled();
   });
 });

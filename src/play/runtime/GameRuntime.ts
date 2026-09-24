@@ -12,6 +12,7 @@ export interface RuntimeInputHub {
   consumeFrame(): InputFrame;
   consumeMenuCommands(): Partial<Record<PlayerId, MenuCommand>>;
   clear(): void;
+  dispose?(): void;
   setPauseHandler(handler: (reason: 'device-disconnected' | 'focus-lost') => void): void;
   confirmResume(): boolean;
 }
@@ -93,6 +94,7 @@ export class GameRuntime {
   dispose(): void {
     if (this.disposed) return;
     this.pause();
+    if (typeof this.inputProvider !== 'function') this.inputProvider.dispose?.();
     this.currentEventBatches = Object.freeze([]);
     this.disposed = true;
   }

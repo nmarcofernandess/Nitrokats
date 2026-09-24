@@ -294,6 +294,7 @@ export class InputHub {
     for (const slot of PLAYER_IDS) this.clearPendingForSlot(slot);
     this.previousActions.clear();
     this.previousMenu.clear();
+    this.lastAim.clear();
   }
 
   getKeyboardDiagnostics(): KeyboardDiagnostics { return { ...this.diagnostics, simultaneousCodes: [...this.diagnostics.simultaneousCodes] }; }
