@@ -9,6 +9,7 @@ import type {
   World,
 } from './model';
 
+const PLAYER_IDS: readonly PlayerConfig['id'][] = ['p1', 'p2'];
 const CAT_IDS: readonly CatId[] = ['anakin', 'yang', 'maya', 'ivy'];
 const WEAPON_IDS: readonly WeaponId[] = ['pulse_rifle', 'scatter_cannon', 'arc_marksman'];
 const ENEMY_KINDS: readonly EnemyKind[] = ['runner', 'gunner', 'brute', 'mechacat'];
@@ -22,6 +23,7 @@ function cloneConfig(config: RunConfig): RunConfig {
 }
 
 function validatePlayer(player: PlayerConfig): void {
+  if (!PLAYER_IDS.includes(player.id)) throw new Error(`ID de jogador inválido: ${String(player.id)}`);
   if (!CAT_IDS.includes(player.catId)) throw new Error(`ID de catálogo de gato inválido: ${String(player.catId)}`);
   if (!WEAPON_IDS.includes(player.weaponId)) throw new Error(`ID de catálogo de arma inválido: ${String(player.weaponId)}`);
 }

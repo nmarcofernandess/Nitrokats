@@ -1,4 +1,4 @@
-import type { PlayerConfig } from './model';
+import type { PlayerConfig, RunConfig } from './model';
 import { describe, expect, it } from 'vitest';
 import { input, makeWorld, player, ticks } from '../../../tests/fixtures/world';
 import { nextRandom } from './rng';
@@ -37,6 +37,16 @@ describe('mundo isolado', () => {
   ])('rejeita configuração com $name jogadores', ({ players }) => {
     expect(() => createWorld({ seed: 1, mode: 'training', difficulty: 'normal', players }))
       .toThrow(/1 ou 2 jogadores/);
+  });
+
+  it('rejeita PlayerId inválido recebido na fronteira runtime', () => {
+    const config: unknown = {
+      seed: 1,
+      mode: 'training',
+      difficulty: 'normal',
+      players: [{ id: 'p3', catId: 'anakin', weaponId: 'pulse_rifle' }],
+    };
+    expect(() => createWorld(config as RunConfig)).toThrow(/ID de jogador inválido/);
   });
 
   it('rejeita jogadores duplicados, catálogo desconhecido e seed inválida', () => {
