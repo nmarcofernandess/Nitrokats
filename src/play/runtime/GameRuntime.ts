@@ -8,6 +8,10 @@ export type InputProvider = (() => InputFrame) & { clear: () => void };
 
 const emptyInput: InputProvider = Object.assign(() => ({}), { clear: () => undefined });
 
+function cloneRunConfig(config: RunConfig): RunConfig {
+  return { ...config, players: config.players.map(player => ({ ...player })) };
+}
+
 export class GameRuntime {
   world: World;
   private readonly inputProvider: InputProvider;
@@ -18,7 +22,7 @@ export class GameRuntime {
 
   constructor(config: RunConfig, inputProvider: InputProvider = emptyInput) {
     this.world = createWorld(config);
-    this.runConfig = this.world.config;
+    this.runConfig = cloneRunConfig(config);
     this.inputProvider = inputProvider;
     this.clock = createClock(() => {
       if (this.disposed || this.world.phase !== 'playing') return;
@@ -37,16 +41,21 @@ export class GameRuntime {
   start(config: RunConfig): void {
     if (this.disposed) return;
     this.world = createWorld(config);
-    this.runConfig = this.world.config;
+    this.runConfig = cloneRunConfig(config);
     this.clock.reset();
     this.inputProvider.clear();
     this.currentEventBatches = Object.freeze([]);
   }
 
   advance(seconds: number): void {
-    if (this.disposed || this.world.phase !== 'playing') return;
+    if (this.disposed) return;
+    if (this.world.phase !== 'playing') {
+      this.clock.reset();
+      return;
+    }
     this.currentEventBatches = Object.freeze([]);
     this.clock.advance(seconds);
+    if (this.world.phase !== 'playing') this.clock.reset();
   }
 
   pause(): void {

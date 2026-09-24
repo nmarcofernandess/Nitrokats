@@ -87,13 +87,19 @@ describe('ciclo de vida do runtime', () => {
   });
 
   it('restart substitui o mundo e descarte repetido é seguro', () => {
-    const runtime = new GameRuntime(config);
+    const inputConfig = structuredClone(config);
+    const runtime = new GameRuntime(inputConfig);
     const abandonedWorld = runtime.world;
     runtime.advance(1);
+    inputConfig.seed = 900;
+    runtime.world.config.seed = 901;
+    runtime.world.config.players[0].catId = 'yang';
     runtime.restart();
     expect(runtime.world).not.toBe(abandonedWorld);
     expect(runtime.world.tick).toBe(0);
     expect(runtime.world.players).not.toBe(abandonedWorld.players);
+    expect(runtime.world.config.seed).toBe(42);
+    expect(runtime.world.config.players[0].catId).toBe('anakin');
     runtime.dispose();
     runtime.dispose();
     runtime.advance(1);
@@ -109,6 +115,40 @@ describe('ciclo de vida do runtime', () => {
     expect(runtime.world.tick).toBe(0);
     runtime.advance(1 / 120);
     expect(runtime.world.tick).toBe(1);
+    runtime.dispose();
+  });
+
+  it('pausa e retoma durante intermission sem avançar o tempo de combate', () => {
+    const runtime = new GameRuntime(config);
+    runtime.advance(1 / 60);
+    runtime.world.phase = 'intermission';
+    const combatTime = runtime.world.elapsed;
+    runtime.pause();
+    runtime.pause();
+    expect(runtime.world.phase).toBe('paused');
+    runtime.advance(1);
+    expect(runtime.world.elapsed).toBe(combatTime);
+    runtime.resume();
+    runtime.resume();
+    expect(runtime.world.phase).toBe('intermission');
+    expect(runtime.world.tick).toBe(1);
+    expect(runtime.world.elapsed).toBe(combatTime);
+    runtime.advance(1 / 120);
+    expect(runtime.world.tick).toBe(1);
+    runtime.dispose();
+  });
+
+  it('descarta fração acumulada quando o combate para em intermission', () => {
+    const runtime = new GameRuntime(config);
+    runtime.advance(1 / 60 + 1 / 120);
+    expect(runtime.world.tick).toBe(1);
+    runtime.world.phase = 'intermission';
+    runtime.advance(1 / 60);
+    runtime.world.phase = 'playing';
+    runtime.advance(1 / 120);
+    expect(runtime.world.tick).toBe(1);
+    runtime.advance(1 / 120);
+    expect(runtime.world.tick).toBe(2);
     runtime.dispose();
   });
 
